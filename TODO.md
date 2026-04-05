@@ -1,17 +1,17 @@
 # TODO
 
-<!-- next-id: 16 -->
+<!-- next-id: 17 -->
 
 <!-- screenshots: add [ss://...] at end of todo line; multiple separated by ; -->
 
 ## Open
 
+- [ ] T016 · Förklara hur analysen gjorde och vilka parametrar som styrde. Lättbegripligt språk. Ändå tydligt.
 - [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda)
-- [ ] T015 · Förklaring av hur analysen gått till beskriven i text/formel eller liknande
 - [ ] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
-- [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
 - [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
 - [ ] T003 · Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
+- [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
 - [ ] T004 · Track ownership as of 1 January in the planning year and distinguish that from any suggested future ownership change.
 - [ ] T005 · Add explicit support for outside owners and the related closely-held-company exceptions.
 - [ ] T006 · Add drivmedelsförmån and bostadsförmån inputs instead of only the current simplified car-benefit field.
@@ -23,3 +23,5 @@
 - [ ] T012 · Separate target-fit optimization from tax-minimization in the result view so the app can show both the closest-to-target plan and the lowest-tax plan when they differ materially.
 
 ## Closed
+
+- [x] T015 · rav Förklaring av hur analysen gått till beskriven i text/formel eller liknande
