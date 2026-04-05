@@ -104,12 +104,24 @@
             </label>
 
             <label class="field">
-              <span data-i18n="field.company_result_before_corporate_tax">Company result before corporate tax</span>
+              <div class="label-row">
+                <span class="label-text" data-i18n="field.company_result_before_corporate_tax">Company result before corporate tax</span>
+                <details class="info-popover">
+                  <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                  <div class="info-panel" data-i18n="info.company_result_before_corporate_tax">This is the company's result before corporate tax, after ordinary business costs. The app then tests different owner salary levels on top of it.</div>
+                </details>
+              </div>
               <input name="company_result_before_corporate_tax" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.company_result_before_corporate_tax }}">
             </label>
 
             <label class="field">
-              <span data-i18n="field.opening_retained_earnings">Opening retained earnings available for dividends</span>
+              <div class="label-row">
+                <span class="label-text" data-i18n="field.opening_retained_earnings">Opening retained earnings available for dividends</span>
+                <details class="info-popover">
+                  <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                  <div class="info-panel" data-i18n="info.opening_retained_earnings">This is money from earlier years that can already be distributed according to the latest adopted annual accounts. It is not the same thing as this year's profit.</div>
+                </details>
+              </div>
               <input name="opening_retained_earnings" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.opening_retained_earnings }}">
               <small data-i18n="field.opening_retained_earnings_hint">Use the distributable retained earnings from the latest adopted accounts. Current-year profit is entered separately above.</small>
             </label>
@@ -140,7 +152,13 @@
               </label>
 
               <label class="field field-span-2">
-                <span data-i18n="field.periodization_fund_change">Planned periodization fund allocation (+) or reversal (-)</span>
+                <div class="label-row">
+                  <span class="label-text" data-i18n="field.periodization_fund_change">Planned periodization fund allocation (+) or reversal (-)</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.periodization_fund_change">Use a positive amount if you want to move part of this year's profit forward and lower tax now. Use a negative amount if you want to bring an earlier periodization fund back into taxation.</div>
+                  </details>
+                </div>
                 <input name="periodization_fund_change" type="text" inputmode="decimal" class="js-number" data-number-kind="signed-amount" value="{{ defaults.periodization_fund_change if defaults.periodization_fund_change is defined else 0 }}">
                 <small data-i18n="field.periodization_fund_change_hint">Positive amounts reduce the current taxable profit. Negative amounts mean reversal from an existing periodization fund balance.</small>
               </label>
@@ -154,12 +172,24 @@
             </div>
             <div class="field-grid">
               <label class="field">
-                <span id="company-salary-label">Company cash salaries in {{ defaults.year - 1 }}</span>
+                <div class="label-row">
+                  <span id="company-salary-label" class="label-text">Company cash salaries in {{ defaults.year - 1 }}</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.prior_year_company_cash_salaries">This is the company's total cash salary paid out in the salary-base year. It is used to calculate the wage-linked part of the dividend room.</div>
+                  </details>
+                </div>
                 <input name="prior_year_company_cash_salaries" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.prior_year_company_cash_salaries }}">
               </label>
 
               <label class="field">
-                <span id="user-salary-label">User salary from the company in {{ defaults.year - 1 }}</span>
+                <div class="label-row">
+                  <span id="user-salary-label" class="label-text">User salary from the company in {{ defaults.year - 1 }}</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.prior_year_user_company_salary">This is your own cash salary from the company in the salary-base year. The app uses it to test whether your dividend room can use the salary-based rule.</div>
+                  </details>
+                </div>
                 <input name="prior_year_user_company_salary" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.prior_year_user_company_salary }}">
               </label>
             </div>

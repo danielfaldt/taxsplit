@@ -22,6 +22,8 @@ def test_index_renders():
     assert 'name="planned_user_pension"' in response.text
     assert 'name="periodization_fund_change"' in response.text
     assert 'name="user_car_benefit"' in response.text
+    assert 'class="info-popover"' in response.text
+    assert 'data-i18n="info.opening_retained_earnings"' in response.text
 
 
 def test_api_calculate_returns_json():
@@ -58,3 +60,5 @@ def test_client_script_persists_form_state_on_input():
     assert "signed-amount" in body
     assert "field.user_birth_year" in body
     assert "field.spouse_birth_year" in body
+    assert "info.opening_retained_earnings" in body
+    assert "info.periodization_fund_change" in body
