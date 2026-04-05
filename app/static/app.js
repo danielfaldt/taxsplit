@@ -309,6 +309,12 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));
 }
 
+function saveStateIfFormField(event) {
+  if (event.target && event.target.name && form.contains(event.target)) {
+    saveState();
+  }
+}
+
 function metric(label, value, subvalue) {
   return `
     <article class="metric">
@@ -474,6 +480,9 @@ yearInput.addEventListener("change", (event) => {
   setFieldLabels(event.target.value);
   saveState();
 });
+
+form.addEventListener("input", saveStateIfFormField);
+form.addEventListener("change", saveStateIfFormField);
 
 languageSwitch.addEventListener("change", (event) => {
   currentLanguage = event.target.value;

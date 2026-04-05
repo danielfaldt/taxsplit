@@ -23,3 +23,11 @@ def test_api_calculate_returns_json():
 def test_security_and_sitemap_exist():
     assert client.get("/security.txt").status_code == 200
     assert client.get("/sitemap.xml").status_code == 200
+
+
+def test_client_script_persists_form_state_on_input():
+    response = client.get("/static/app.js")
+    assert response.status_code == 200
+    body = response.text
+    assert 'form.addEventListener("input", saveStateIfFormField);' in body
+    assert 'localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));' in body
