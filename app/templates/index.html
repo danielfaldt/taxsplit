@@ -138,8 +138,8 @@
             <div class="field-columns">
               <div class="field-column">
                 <label class="field">
-                  <span id="user-other-service-income-label" data-i18n="field.user_other_service_income">User other service income</span>
-                  <input name="user_other_service_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.user_other_service_income if defaults.user_other_service_income is defined else 0 }}">
+                  <span id="user-other-salary-income-label" data-i18n="field.user_other_salary_income">User other salary income outside the company</span>
+                  <input name="user_other_salary_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.user_other_salary_income if defaults.user_other_salary_income is defined else 0 }}">
                 </label>
 
                 <label class="field">
@@ -172,13 +172,15 @@
                     <span class="label-text" data-i18n="field.municipal_tax_rate">Municipal tax rate</span>
                     <details class="info-popover">
                       <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
-                      <div class="info-panel" data-i18n="info.municipal_tax_rate">The field can be auto-filled from the selected municipality. If church membership is enabled, the selected parish adds the church fee. You can still edit the rate manually.</div>
+                      <div class="info-panel" data-i18n="info.municipal_tax_rate">The field is auto-filled with municipal and regional income tax from the selected municipality. Burial fee and any church fee are handled separately in the calculation. You can still edit the visible rate manually.</div>
                     </details>
                   </div>
                   <div class="inline-input">
                     <input name="municipal_tax_rate" id="municipal-tax-rate" type="text" inputmode="decimal" class="js-number" data-number-kind="percent" value="{{ defaults.municipal_tax_rate }}">
                     <small>%</small>
                   </div>
+                  <input name="burial_fee_rate" id="burial-fee-rate" type="hidden" class="js-number" data-number-kind="percent" value="{{ defaults.burial_fee_rate if defaults.burial_fee_rate is defined else 0.292 }}">
+                  <input name="church_fee_rate" id="church-fee-rate" type="hidden" class="js-number" data-number-kind="percent" value="{{ defaults.church_fee_rate if defaults.church_fee_rate is defined else 0 }}">
                 </label>
               </div>
 
@@ -229,6 +231,14 @@
                 <input name="planned_user_pension" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.planned_user_pension if defaults.planned_user_pension is defined else 0 }}">
               </label>
 
+              <label class="field">
+                <span id="car-benefit-pensionable-label" data-i18n="field.car_benefit_is_pensionable">Car benefit counts toward pension base</span>
+                <div class="checkbox-row">
+                  <input name="car_benefit_is_pensionable" id="car-benefit-is-pensionable" type="checkbox" {% if defaults.car_benefit_is_pensionable %}checked{% endif %}>
+                  <span data-i18n="field.car_benefit_is_pensionable_hint">Use this only if the car benefit is intended to be pensionable in the company's pension setup.</span>
+                </div>
+              </label>
+
               <label class="field field-span-2">
                 <div class="label-row">
                   <span class="label-text" data-i18n="field.periodization_fund_change">Planned periodization fund allocation (+) or reversal (-)</span>
@@ -239,6 +249,11 @@
                 </div>
                 <input name="periodization_fund_change" type="text" inputmode="decimal" class="js-number" data-number-kind="signed-amount" value="{{ defaults.periodization_fund_change if defaults.periodization_fund_change is defined else 0 }}">
                 <small data-i18n="field.periodization_fund_change_hint">Positive amounts reduce the current taxable profit. Negative amounts mean reversal from an existing periodization fund balance.</small>
+              </label>
+
+              <label class="field">
+                <span data-i18n="field.opening_periodization_fund_balance">Opening periodization fund balance</span>
+                <input name="opening_periodization_fund_balance" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.opening_periodization_fund_balance if defaults.opening_periodization_fund_balance is defined else 0 }}">
               </label>
             </div>
           </div>
@@ -286,7 +301,13 @@
             </div>
             <div class="field-grid">
               <div class="field field-span-2 ownership-field">
-                <span data-i18n="field.user_share_percentage">User ownership share</span>
+                <div class="label-row">
+                  <span class="label-text" data-i18n="field.user_share_percentage">User ownership share</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.user_share_percentage">The simplest normal route is usually that one owner transfers shares to the other through a sale or a gift. Check the articles of association and any shareholders' agreement first, write a transfer agreement, update the share register immediately, and change owner details for a closely held company with the Swedish Tax Agency via verksamt.se.</div>
+                  </details>
+                </div>
                 <div class="ownership-values">
                   <div class="ownership-value">
                     <small id="user-share-label" data-i18n="field.user_share_percentage">User ownership share</small>

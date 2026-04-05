@@ -17,7 +17,7 @@ The primary company input is the company result before corporate tax. The app th
 - Server-generated PDF export for formal review by advisors, auditors, or the user
 - Birth-year-aware personal tax and employer contribution handling
 - Adjustable ownership split between spouses, plus an indicative ownership suggestion when a different split lowers total tax
-- Additional planning inputs for user service income, car benefit, occupational pension, and periodization fund adjustments
+- Additional planning inputs for salary outside the company, car benefit, occupational pension, opening periodization-fund balance, and periodization fund adjustments
 - Side-by-side alternative scenarios
 - Transparent breakdown of company tax, salary tax, dividend tax, and qualified dividend room
 - Browser local storage for form persistence
@@ -33,7 +33,7 @@ The primary company input is the company result before corporate tax. The app th
 
 - `app/main.py`: FastAPI application, page routes, API route, and lightweight SEO/security routes
 - `app/calculator/rules.py`: year-specific tax and dividend rule tables
-- `app/calculator/tax.py`: salary and service-income tax engine, including senior-age handling
+- `app/calculator/tax.py`: personal-tax engine for earned income, service-taxed dividend overflow, burial fee, church fee, and senior-age handling
 - `app/calculator/planner.py`: dividend-room logic, company budget modeling, scenario search, compensation-mix analysis, and recommendation scoring
 - `app/tax_rates.py`: municipality and parish tax-rate catalog parsing from official Skatteverket datasets
 - `app/templates/index.html`: server-rendered shell
@@ -64,6 +64,7 @@ http://10.20.30.100:31847
 ### Run tests
 
 ```bash
+docker compose --env-file .env.dev build test
 docker compose --env-file .env.dev run --rm test
 ```
 
@@ -73,13 +74,14 @@ docker compose --env-file .env.dev run --rm test
 - The user can set the ownership split between spouses.
 - Only the user receives salary from the company.
 - Birth year affects both personal tax treatment and employer contribution rate.
-- Other service income for the user is modeled separately from company compensation.
+- Salary outside the company for the user is modeled as additional earned income and affects base deduction, earned-income credit, pension fee, and marginal tax.
 - Taxable car benefit affects salary tax and employer contributions but does not count as cash net income toward the target.
-- Occupational pension is checked against the model's main-rule deduction envelope.
-- Positive periodization fund amounts are treated as allocations; negative values are treated as reversals.
+- Occupational pension is checked against the deduction envelope using the higher of the current pension base and the user's prior-year company salary.
+- Positive periodization fund amounts are treated as allocations; negative values are treated as reversals and cannot exceed the stated opening balance.
 - The spouse's external salary only affects the spouse's tax result where dividends spill into service taxation.
 - Dividends are limited to current-year post-corporate-tax profit plus any opening retained earnings entered by the user.
-- The app uses one shared municipal tax rate for the household. It can be auto-filled from municipality and parish data, then manually overridden if needed.
+- The visible municipal-tax field models municipal and regional income tax. Burial fee and optional church fee are fetched separately from municipality and parish data.
+- The app still uses one shared local tax setup for the household rather than separate municipality selections per owner.
 - The current implementation supports planning years `2025` and `2026` only.
 
 ## Dev deployment
@@ -93,7 +95,7 @@ docker compose --env-file .env.dev run --rm test
 
 - The app does not yet support years beyond `2026`.
 - Municipal tax is still shared across both spouses rather than tracked per owner with separate municipality selections.
-- The app does not yet track opening periodization fund balances, so reversals are user-controlled assumptions.
+- The pension model still assumes one simplified deduction envelope rather than a full historical pension-right analysis.
 - The app is an estimation and planning tool, not a filing engine.
 
 ## Source basis

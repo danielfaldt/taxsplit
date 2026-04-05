@@ -24,6 +24,8 @@ class PersonalTaxResult:
     taxable_income: float
     base_deduction: float
     municipal_tax: float
+    burial_fee_tax: float
+    church_fee_tax: float
     state_tax: float
     pension_fee: float
     pension_credit: float
@@ -143,15 +145,20 @@ def compute_personal_tax(
     earned_income: float,
     service_income: float = 0.0,
     municipal_rate: float | None = None,
+    burial_fee_rate: float | None = None,
+    church_fee_rate: float = 0.0,
     birth_year: int | None = None,
 ) -> PersonalTaxResult:
     rule = SALARY_RULES[year]
     municipal_rate = municipal_rate if municipal_rate is not None else rule.municipal_rate_default
+    burial_fee_rate = burial_fee_rate if burial_fee_rate is not None else rule.burial_fee_default
     total_income = max(earned_income, 0.0) + max(service_income, 0.0)
     senior_tax_treatment = birth_year is not None and has_senior_tax_treatment(year, birth_year)
     base_deduction = total_base_deduction(year, total_income, birth_year)
     taxable_income = max(total_income - base_deduction, 0.0)
     municipal_tax = taxable_income * (municipal_rate / 100.0)
+    burial_fee_tax = taxable_income * (burial_fee_rate / 100.0)
+    church_fee_tax = taxable_income * (church_fee_rate / 100.0)
     state_tax = max(taxable_income - rule.state_tax_threshold_taxable, 0.0) * STATE_INCOME_TAX_RATE
 
     pension_base = min(max(earned_income, 0.0), 8.07 * rule.ibb)
@@ -164,7 +171,12 @@ def compute_personal_tax(
     if senior_tax_treatment:
         earned_credit_raw = earned_income_credit_over66(year, earned_income)
     else:
-        earned_credit_raw = earned_income_credit_under66(year, earned_income, base_deduction, municipal_rate)
+        earned_credit_raw = earned_income_credit_under66(
+            year,
+            earned_income,
+            base_deduction,
+            max(municipal_rate - 1.16, 0.0),
+        )
     available_municipal_after_pension = max(municipal_tax - pension_credit, 0.0)
     earned_credit = min(earned_credit_raw, available_municipal_after_pension)
     income_credit_amount = min(
@@ -176,6 +188,8 @@ def compute_personal_tax(
 
     total_tax = (
         municipal_tax
+        + burial_fee_tax
+        + church_fee_tax
         + state_tax
         + pension_fee
         + public_service_fee
@@ -190,6 +204,8 @@ def compute_personal_tax(
         taxable_income=round(taxable_income, 2),
         base_deduction=round(base_deduction, 2),
         municipal_tax=round(municipal_tax, 2),
+        burial_fee_tax=round(burial_fee_tax, 2),
+        church_fee_tax=round(church_fee_tax, 2),
         state_tax=round(state_tax, 2),
         pension_fee=round(pension_fee, 2),
         pension_credit=round(pension_credit, 2),

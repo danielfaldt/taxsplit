@@ -21,7 +21,7 @@ const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
 const userDisplayNameInput = document.querySelector("#user-display-name");
 const spouseDisplayNameInput = document.querySelector("#spouse-display-name");
 const targetNetIncomeLabel = document.querySelector("#target-net-income-label");
-const userOtherServiceIncomeLabel = document.querySelector("#user-other-service-income-label");
+const userOtherSalaryIncomeLabel = document.querySelector("#user-other-salary-income-label");
 const spouseExternalSalaryLabel = document.querySelector("#spouse-external-salary-label");
 const userCarBenefitLabel = document.querySelector("#user-car-benefit-label");
 const plannedUserPensionLabel = document.querySelector("#planned-user-pension-label");
@@ -32,6 +32,8 @@ const taxParishSelect = document.querySelector("#tax-parish");
 const taxParishField = document.querySelector("#tax-parish-field");
 const includeChurchFeeInput = document.querySelector("#include-church-fee");
 const municipalTaxRateInput = document.querySelector("#municipal-tax-rate");
+const burialFeeRateInput = document.querySelector("#burial-fee-rate");
+const churchFeeRateInput = document.querySelector("#church-fee-rate");
 const userShareLabel = document.querySelector("#user-share-label");
 const spouseShareLabel = document.querySelector("#spouse-share-label");
 const userShareDisplay = document.querySelector("#user-share-display");
@@ -94,18 +96,22 @@ const TRANSLATIONS = {
     "field.spouse_birth_year": "Makes/makas födelseår",
     "field.user_share_percentage": "Användarens aktieandel",
     "field.spouse_share_percentage": "Makes/makas aktieandel",
-    "field.user_other_service_income": "Användarens övriga tjänsteinkomster",
+    "field.user_other_salary_income": "Användarens andra lön utanför bolaget",
     "field.user_car_benefit": "Bilförmån för användaren",
     "field.planned_user_pension": "Planerad tjänstepension för användaren",
+    "field.car_benefit_is_pensionable": "Bilförmån räknas in i pensionsunderlaget",
+    "field.car_benefit_is_pensionable_hint": "Använd bara detta om bilförmånen faktiskt ska vara pensionsgrundande i bolagets pensionslösning.",
     "field.periodization_fund_change": "Planerad avsättning (+) eller återföring (-) av periodiseringsfond",
     "field.periodization_fund_change_hint": "Positivt belopp minskar årets skattemässiga resultat. Negativt belopp betyder återföring från tidigare periodiseringsfond.",
+    "field.opening_periodization_fund_balance": "Ingående saldo i periodiseringsfond",
     "field.opening_retained_earnings_hint": "Ange utdelningsbart fritt eget kapital från senast fastställda bokslut. Årets resultat anges separat ovan.",
     "info.company_result_before_corporate_tax": "Det här är bolagets resultat efter vanliga kostnader, men före bolagsskatt. Appen testar sedan olika nivåer på din lön ovanpå det beloppet.",
     "info.opening_retained_earnings": "Det här är pengar från tidigare år som redan får delas ut enligt senast fastställda bokslut. Det är alltså inte samma sak som årets vinst.",
     "info.periodization_fund_change": "Ange ett positivt belopp om du vill skjuta en del av årets vinst framåt och sänka skatten nu. Ange ett negativt belopp om du vill återföra en tidigare periodiseringsfond till beskattning i år.",
     "info.prior_year_company_cash_salaries": "Det här är bolagets totala kontanta löner under lönebasåret. Uppgiften används för att räkna fram det lönebaserade utdelningsutrymmet.",
     "info.prior_year_user_company_salary": "Det här är din egen kontanta lön från bolaget under lönebasåret. Appen använder den för att se om ditt utdelningsutrymme får använda löneunderlaget.",
-    "info.municipal_tax_rate": "Fältet kan autoifyllas från vald kommun. Om medlemskap i Svenska kyrkan är aktivt läggs kyrkoavgiften från vald församling till. Du kan fortfarande ändra procentsatsen manuellt.",
+    "info.municipal_tax_rate": "Fältet autoifylls med kommunal och regional inkomstskatt från vald kommun. Begravningsavgift och eventuell kyrkoavgift hanteras separat i beräkningen. Du kan fortfarande ändra den synliga procentsatsen manuellt.",
+    "info.user_share_percentage": "Det enklaste normala sättet att ändra ägarandel är oftast att en ägare överlåter aktier till den andra genom gåva eller försäljning. Kontrollera bolagsordning och eventuellt aktieägaravtal, skriv en överlåtelsehandling, uppdatera aktieboken direkt och anmäl ändringen via verksamt.se.",
     "compensation.title": "Justeringar i ersättningen",
     "compensation.subtitle": "Bilförmån, tjänstepension och periodiseringsfond modelleras ovanpå vald kontant lön.",
     "placeholder.user_display_name": "Ditt namn",
@@ -152,11 +158,13 @@ const TRANSLATIONS = {
     "label.available_dividend_cash": "Tillgänglig utdelningslikvid",
     "label.gross_salary": "Bruttolön",
     "label.cash_salary": "Kontant lön",
-    "label.user_other_service_income": "Övriga tjänsteinkomster",
+    "label.user_other_salary_income": "Annan lön utanför bolaget",
     "label.car_benefit": "Bilförmån",
     "label.taxable_company_income": "Skattepliktig ersättning från bolaget",
     "label.base_deduction": "Grundavdrag",
     "label.municipal_tax": "Kommunal skatt",
+    "label.burial_fee_tax": "Begravningsavgift",
+    "label.church_fee_tax": "Kyrkoavgift",
     "label.state_tax": "Statlig skatt",
     "label.incremental_salary_tax": "Tillkommande skatt från bolaget",
     "label.net_salary": "Nettolön",
@@ -240,14 +248,14 @@ const TRANSLATIONS = {
     "assumption.swedish_limited_company": "Den aktuella modellen avser ett svenskt privat aktiebolag med två makar där {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "assumption.only_user_company_salary": "Endast {userName} antas ta lön från bolaget.",
     "assumption.dividend_limited_to_profit_and_retained": "Utdelning begränsas till aktuell vinst efter lönekostnad och eventuell ingående fri vinst som användaren anger.",
-    "assumption.municipal_rate_editable": "Kommunalskatten kan autoifyllas från vald kommun och, vid behov, vald församling. Användaren kan fortfarande justera procentsatsen manuellt.",
+    "assumption.municipal_rate_editable": "Det synliga kommunalskattefältet avser kommunal och regional inkomstskatt. Begravningsavgift och eventuell kyrkoavgift hämtas separat från vald kommun och församling, men den synliga procentsatsen kan fortfarande justeras manuellt.",
     "assumption.official_rule_data": "Appen modellerar årsspecifik löneskatt och 3:12-liknande utdelningsskatt med officiella regeldata för 2025 och 2026.",
     "assumption.spouse_salary_affects_service_tax": "Tjänstebeskattad överskjutande utdelning modelleras som extra tjänsteinkomst där lönen från annan arbetsgivare för {spouseName} påverkar skatteeffekten.",
     "assumption.birth_year_affects_tax": "Födelseår påverkar den personliga beskattningen och arbetsgivaravgiften enligt reglerna som gäller för valt år.",
-    "assumption.user_other_service_income": "Användarens övriga tjänsteinkomster beskattas i modellen som separat tjänsteinkomst utanför bolaget och påverkar marginalskatten.",
+    "assumption.user_other_salary_income": "Användarens andra lön utanför bolaget behandlas som ytterligare arbetsinkomst och påverkar grundavdrag, jobbskatteavdrag, pensionsavgift och marginalskatt.",
     "assumption.car_benefit_cash_vs_tax": "Bilförmån behandlas som skattepliktig förmån som påverkar skatt och arbetsgivaravgifter, men räknas inte som kontant nettolön mot användarens mål.",
-    "assumption.pension_limit": "Tjänstepensionen valideras mot huvudregelns avdragsram i modellen. Om nivån kräver högre lön väljs bara scenarier där den ryms.",
-    "assumption.periodization_fund": "Positiv periodiseringsfond minskar årets beskattningsbara resultat. Negativt värde tolkas som återföring och förutsätter att sådan fond redan finns.",
+    "assumption.pension_limit": "Tjänstepensionen valideras mot avdragsramen med utgångspunkt i det högsta av innevarande års pensionsunderlag och användarens kontanta lön från föregående år. Bilförmån räknas bara med om den markerats som pensionsgrundande.",
+    "assumption.periodization_fund": "Positiv periodiseringsfond minskar årets beskattningsbara resultat. Negativt värde tolkas som återföring och får inte överstiga angivet ingående fondsaldo.",
     "explanation.salary_uses_planning_year": "Lön som tas ut under {planningYear} beskattas med lönereglerna för {planningYear}.",
     "explanation.dividend_uses_salary_basis_year": "Utdelningsutrymmet för {planningYear} använder lönebasåret {salaryBasisYear}.",
     "explanation.recommendation_scoring": "Rekommendationen minimerar först avståndet till användarens nettomål och föredrar därefter lägre total skatt."
@@ -301,18 +309,22 @@ const TRANSLATIONS = {
     "field.spouse_birth_year": "Spouse birth year",
     "field.user_share_percentage": "User ownership share",
     "field.spouse_share_percentage": "Spouse ownership share",
-    "field.user_other_service_income": "User other service income",
+    "field.user_other_salary_income": "User other salary income outside the company",
     "field.user_car_benefit": "Annual car benefit value for the user",
     "field.planned_user_pension": "Planned occupational pension for the user",
+    "field.car_benefit_is_pensionable": "Car benefit counts toward pension base",
+    "field.car_benefit_is_pensionable_hint": "Use this only when the company pension arrangement actually treats the car benefit as pensionable.",
     "field.periodization_fund_change": "Planned periodization fund allocation (+) or reversal (-)",
     "field.periodization_fund_change_hint": "Positive amounts reduce the current taxable profit. Negative amounts mean reversal from an existing periodization fund balance.",
+    "field.opening_periodization_fund_balance": "Opening periodization fund balance",
     "field.opening_retained_earnings_hint": "Use the distributable retained earnings from the latest adopted accounts. Current-year profit is entered separately above.",
     "info.company_result_before_corporate_tax": "This is the company's result after ordinary business costs, but before corporate tax. The app then tests different owner salary levels on top of that amount.",
     "info.opening_retained_earnings": "This is money from earlier years that can already be distributed according to the latest adopted annual accounts. It is not the same thing as this year's profit.",
     "info.periodization_fund_change": "Use a positive amount if you want to move part of this year's profit forward and lower tax now. Use a negative amount if you want to bring an earlier periodization fund back into taxation this year.",
     "info.prior_year_company_cash_salaries": "This is the company's total cash salary paid in the salary-base year. It is used to calculate the wage-linked part of the dividend room.",
     "info.prior_year_user_company_salary": "This is your own cash salary from the company in the salary-base year. The app uses it to test whether your dividend room can use the salary-based rule.",
-    "info.municipal_tax_rate": "The field can be auto-filled from the selected municipality. If church membership is enabled, the selected parish adds the church fee. You can still edit the rate manually.",
+    "info.municipal_tax_rate": "The field auto-fills municipal and regional income tax from the selected municipality. Burial fee and any church fee are handled separately in the calculation. You can still edit the visible rate manually.",
+    "info.user_share_percentage": "The simplest normal route is usually that one owner transfers shares to the other through a gift or sale. Check the articles of association and any shareholders' agreement first, write a transfer agreement, update the share register immediately, and report the change through verksamt.se.",
     "compensation.title": "Compensation adjustments",
     "compensation.subtitle": "Benefit value, pension, and periodization fund are modelled on top of the selected cash salary.",
     "placeholder.user_display_name": "Your name",
@@ -359,11 +371,13 @@ const TRANSLATIONS = {
     "label.available_dividend_cash": "Available dividend cash",
     "label.gross_salary": "Gross salary",
     "label.cash_salary": "Cash salary",
-    "label.user_other_service_income": "Other service income",
+    "label.user_other_salary_income": "Other salary outside the company",
     "label.car_benefit": "Car benefit",
     "label.taxable_company_income": "Taxable company compensation",
     "label.base_deduction": "Base deduction",
     "label.municipal_tax": "Municipal tax",
+    "label.burial_fee_tax": "Burial fee",
+    "label.church_fee_tax": "Church fee",
     "label.state_tax": "State tax",
     "label.incremental_salary_tax": "Incremental tax from company",
     "label.net_salary": "Net salary",
@@ -447,18 +461,23 @@ const TRANSLATIONS = {
     "assumption.swedish_limited_company": "The current model covers a Swedish private limited company with two spouse owners where {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
     "assumption.only_user_company_salary": "Only {userName} receives salary from the company.",
     "assumption.dividend_limited_to_profit_and_retained": "Dividends are limited to current-year profit after salary cost and any opening retained earnings entered by the user.",
-    "assumption.municipal_rate_editable": "The municipal tax rate can be auto-filled from the selected municipality and, when relevant, the selected parish. The user can still override the rate manually.",
+    "assumption.municipal_rate_editable": "The visible municipal-tax field covers municipal and regional income tax. Burial fee and any church fee are fetched separately from the selected municipality and parish, while the visible percentage remains manually editable.",
     "assumption.official_rule_data": "The app models year-specific salary tax and 3:12-style dividend tax using official 2025 and 2026 rule data.",
     "assumption.spouse_salary_affects_service_tax": "Service-taxed excess dividend is modelled as additional service income with salary from another employer for {spouseName} affecting that personal tax outcome.",
     "assumption.birth_year_affects_tax": "Birth year affects personal taxation and employer contributions under the rules for the selected year.",
-    "assumption.user_other_service_income": "The user's other service income is modelled as separate non-company service income and affects the marginal tax outcome.",
+    "assumption.user_other_salary_income": "The user's other salary outside the company is treated as additional earned income and affects base deduction, earned-income credit, pension fee, and marginal tax.",
     "assumption.car_benefit_cash_vs_tax": "Car benefit is treated as a taxable benefit that affects tax and employer contributions, but it is not counted as cash net income toward the user's target.",
-    "assumption.pension_limit": "The occupational pension is checked against the model's main-rule deduction envelope. If a higher salary is required, only scenarios that fit are kept.",
-    "assumption.periodization_fund": "A positive periodization fund amount reduces current taxable profit. A negative amount is treated as reversal and assumes an existing balance is available.",
+    "assumption.pension_limit": "The occupational pension is checked against the deduction envelope using the higher of the current pension base and the user's prior-year cash salary. Car benefit is included only if marked as pensionable.",
+    "assumption.periodization_fund": "A positive periodization-fund amount reduces current taxable profit and a negative amount cannot exceed the stated opening balance.",
     "explanation.salary_uses_planning_year": "Salary paid during {planningYear} is taxed using {planningYear} salary-tax rules.",
     "explanation.dividend_uses_salary_basis_year": "Dividend room for {planningYear} uses the salary base year {salaryBasisYear}.",
     "explanation.recommendation_scoring": "The recommendation minimizes distance to the user's after-tax target and then prefers lower total tax burden."
   }
+};
+
+const YEAR_DEFAULTS = {
+  2025: { municipalTaxRate: 32.41, burialFeeRate: 0.293 },
+  2026: { municipalTaxRate: 32.38, burialFeeRate: 0.292 },
 };
 
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "sv";
@@ -525,7 +544,11 @@ function readSavedState() {
   }
 
   try {
-    return { ...window.APP_DEFAULTS, ...JSON.parse(saved) };
+    const parsed = JSON.parse(saved);
+    if (parsed.user_other_salary_income === undefined && parsed.user_other_service_income !== undefined) {
+      parsed.user_other_salary_income = parsed.user_other_service_income;
+    }
+    return { ...window.APP_DEFAULTS, ...parsed };
   } catch {
     return { ...window.APP_DEFAULTS };
   }
@@ -736,7 +759,7 @@ function ownerSpecificText(kind, ownerType, params = {}) {
   if (currentLanguage === "sv") {
     if (kind === "birth_year") return `Födelseår för ${owner}`;
     if (kind === "target_net_income") return `Önskad nettoinkomst efter skatt för ${owner}`;
-    if (kind === "other_service_income") return `Övriga tjänsteinkomster för ${owner}`;
+    if (kind === "other_salary_income") return `Annan lön utanför bolaget för ${owner}`;
     if (kind === "external_salary") return `Lön från annan arbetsgivare för ${owner}`;
     if (kind === "salary_from_company") return `Lön från bolaget under ${params.salaryBasisYear} för ${owner}`;
     if (kind === "saved_dividend_space") return `Sparat utdelningsutrymme för ${owner}`;
@@ -751,7 +774,7 @@ function ownerSpecificText(kind, ownerType, params = {}) {
 
   if (kind === "birth_year") return `Birth year for ${owner}`;
   if (kind === "target_net_income") return `Desired net income after tax for ${owner}`;
-  if (kind === "other_service_income") return `Other service income for ${owner}`;
+  if (kind === "other_salary_income") return `Other salary outside the company for ${owner}`;
   if (kind === "external_salary") return `Salary from another employer for ${owner}`;
   if (kind === "salary_from_company") return `Salary from the company in ${params.salaryBasisYear} for ${owner}`;
   if (kind === "saved_dividend_space") return `Saved dividend space for ${owner}`;
@@ -780,7 +803,7 @@ function setFieldLabels(year) {
   targetNetIncomeLabel.textContent = ownerSpecificText("target_net_income", "user");
   userBirthYearLabel.textContent = ownerSpecificText("birth_year", "user");
   spouseBirthYearLabel.textContent = ownerSpecificText("birth_year", "spouse");
-  userOtherServiceIncomeLabel.textContent = ownerSpecificText("other_service_income", "user");
+  userOtherSalaryIncomeLabel.textContent = ownerSpecificText("other_salary_income", "user");
   spouseExternalSalaryLabel.textContent = ownerSpecificText("external_salary", "spouse");
   userCarBenefitLabel.textContent = ownerSpecificText("car_benefit", "user");
   plannedUserPensionLabel.textContent = ownerSpecificText("pension", "user");
@@ -873,22 +896,35 @@ function findSelectedParish() {
   return municipality?.parishes?.find((item) => item.parish === taxParishSelect.value) || null;
 }
 
-function applyMunicipalTaxAutofill({ force = false } = {}) {
+function syncLocalTaxComponentInputs() {
   const municipality = selectedMunicipalityRecord();
-  if (!municipality || (municipalTaxManualOverride && !force)) {
+  const yearDefaults = YEAR_DEFAULTS[Number(yearInput.value)] || YEAR_DEFAULTS[2026];
+  if (!municipality) {
+    burialFeeRateInput.value = formatInputValue(yearDefaults.burialFeeRate, "percent");
+    churchFeeRateInput.value = formatInputValue(0, "percent");
     return;
   }
 
-  let rate = municipality.total_excluding_church;
-  if (includeChurchFeeInput.checked) {
-    const parish = findSelectedParish();
-    if (parish) {
-      rate = parish.total_including_church;
-    }
+  burialFeeRateInput.value = formatInputValue(municipality.burial_fee || 0, "percent");
+  const parish = findSelectedParish();
+  const churchFee = includeChurchFeeInput.checked && parish ? parish.church_fee || 0 : 0;
+  churchFeeRateInput.value = formatInputValue(churchFee, "percent");
+}
+
+function applyMunicipalTaxAutofill({ force = false } = {}) {
+  const municipality = selectedMunicipalityRecord();
+  syncLocalTaxComponentInputs();
+
+  if (municipalTaxManualOverride && !force) {
+    return;
   }
+  const yearDefaults = YEAR_DEFAULTS[Number(yearInput.value)] || YEAR_DEFAULTS[2026];
+  const localIncomeTax = municipality
+    ? (municipality.municipal_tax || 0) + (municipality.regional_tax || 0)
+    : yearDefaults.municipalTaxRate;
 
   applyingMunicipalTaxRate = true;
-  municipalTaxRateInput.value = formatInputValue(rate, "percent");
+  municipalTaxRateInput.value = formatInputValue(localIncomeTax, "percent");
   applyingMunicipalTaxRate = false;
 }
 
@@ -934,6 +970,7 @@ async function restoreState() {
   populateTaxMunicipalities(source.tax_municipality || "");
   populateTaxParishes(source.tax_parish || "");
   syncParishFieldVisibility();
+  syncLocalTaxComponentInputs();
   if (!municipalTaxManualOverride) {
     applyMunicipalTaxAutofill({ force: true });
   }
@@ -1210,11 +1247,13 @@ function renderBreakdown(result) {
     ]),
     breakdownCard(ownerSpecificText("salary_tax", "user"), [
       [t("label.cash_salary"), formatCurrency(recommendation.salary)],
-      [t("label.user_other_service_income"), formatCurrency(result.input.user_other_service_income)],
+      [t("label.user_other_salary_income"), formatCurrency(result.input.user_other_salary_income)],
       [t("label.car_benefit"), formatCurrency(company.car_benefit)],
       [t("label.taxable_company_income"), formatCurrency(company.taxable_salary_base)],
       [t("label.base_deduction"), formatCurrency(salaryTax.base_deduction)],
       [t("label.municipal_tax"), formatCurrency(salaryTax.municipal_tax)],
+      [t("label.burial_fee_tax"), formatCurrency(salaryTax.burial_fee_tax)],
+      [t("label.church_fee_tax"), formatCurrency(salaryTax.church_fee_tax)],
       [t("label.state_tax"), formatCurrency(salaryTax.state_tax)],
       [t("label.incremental_salary_tax"), formatCurrency(recommendation.incremental_user_salary_tax)],
       [t("label.net_cash_salary"), formatCurrency(recommendation.user_net_cash_salary)],

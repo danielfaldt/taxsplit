@@ -22,6 +22,7 @@ class SalaryTaxRule:
     pbb: float
     ibb: float
     municipal_rate_default: float
+    burial_fee_default: float
     state_tax_threshold_taxable: float
     public_service_multiplier: float
     public_service_cap_multiplier: float
@@ -29,6 +30,7 @@ class SalaryTaxRule:
     under66_credit_mid_slope: float
     under66_credit_high_slope: float
     under66_credit_high_constant_pbb: float
+    reduced_employer_contribution_min_age: int
 
 
 @dataclass(frozen=True)
@@ -52,6 +54,7 @@ SALARY_RULES: dict[int, SalaryTaxRule] = {
         pbb=58_800,
         ibb=80_600,
         municipal_rate_default=32.41,
+        burial_fee_default=0.293,
         state_tax_threshold_taxable=625_800,
         public_service_multiplier=0.01,
         public_service_cap_multiplier=1.55,
@@ -59,12 +62,14 @@ SALARY_RULES: dict[int, SalaryTaxRule] = {
         under66_credit_mid_slope=0.3874,
         under66_credit_high_slope=0.1990,
         under66_credit_high_constant_pbb=2.776,
+        reduced_employer_contribution_min_age=66,
     ),
     2026: SalaryTaxRule(
         year=2026,
         pbb=59_200,
         ibb=83_400,
         municipal_rate_default=32.38,
+        burial_fee_default=0.292,
         state_tax_threshold_taxable=643_000,
         public_service_multiplier=0.01,
         public_service_cap_multiplier=1.42,
@@ -72,6 +77,7 @@ SALARY_RULES: dict[int, SalaryTaxRule] = {
         under66_credit_mid_slope=0.3874,
         under66_credit_high_slope=0.2510,
         under66_credit_high_constant_pbb=3.027,
+        reduced_employer_contribution_min_age=67,
     ),
 }
 
@@ -110,6 +116,6 @@ def has_senior_tax_treatment(year: int, birth_year: int) -> bool:
 
 
 def employer_contribution_rate(year: int, birth_year: int) -> float:
-    if age_at_year_start(year, birth_year) >= REDUCED_EMPLOYER_CONTRIBUTION_AGE:
+    if age_at_year_start(year, birth_year) >= SALARY_RULES[year].reduced_employer_contribution_min_age:
         return REDUCED_EMPLOYER_CONTRIBUTION_RATE
     return FULL_EMPLOYER_CONTRIBUTION_RATE

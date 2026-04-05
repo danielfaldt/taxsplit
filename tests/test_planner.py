@@ -34,6 +34,16 @@ def test_2026_dividend_space_uses_new_combined_rule():
     assert spaces.user_space > spaces.spouse_space
 
 
+def test_year_specific_local_tax_defaults_follow_selected_year():
+    data_2025 = PlanningInput(year=2025)
+    data_2026 = PlanningInput(year=2026)
+
+    assert data_2025.municipal_tax_rate == 32.41
+    assert data_2025.burial_fee_rate == 0.293
+    assert data_2026.municipal_tax_rate == 32.38
+    assert data_2026.burial_fee_rate == 0.292
+
+
 def test_plan_compensation_returns_recommendation_and_alternatives():
     result = plan_compensation(PlanningInput().model_dump())
     assert result["recommended"]["user_net_from_company"] > 0
@@ -88,11 +98,41 @@ def test_company_budget_applies_car_benefit_pension_and_periodization():
     assert budget["taxable_profit"] < budget["profit_before_periodization"]
 
 
-def test_plan_compensation_uses_other_service_income_and_car_benefit_without_counting_benefit_as_cash():
+def test_company_budget_uses_prior_year_salary_for_pension_limit():
+    budget = compute_company_budget(
+        PlanningInput(
+            year=2026,
+            prior_year_user_company_salary=300_000,
+            planned_user_pension=80_000,
+            user_car_benefit=40_000,
+            car_benefit_is_pensionable=False,
+        ),
+        planned_salary=100_000,
+    )
+
+    assert budget["valid"] is True
+    assert budget["pension_deduction_limit"] == 105_000
+
+
+def test_company_budget_rejects_reversal_above_opening_periodization_balance():
+    budget = compute_company_budget(
+        PlanningInput(
+            year=2026,
+            periodization_fund_change=-90_000,
+            opening_periodization_fund_balance=50_000,
+        ),
+        planned_salary=400_000,
+    )
+
+    assert budget["valid"] is False
+    assert budget["opening_periodization_fund_balance"] == 50_000
+
+
+def test_plan_compensation_uses_other_salary_income_and_car_benefit_without_counting_benefit_as_cash():
     result = plan_compensation(
         PlanningInput(
             year=2026,
-            user_other_service_income=180_000,
+            user_other_salary_income=180_000,
             user_car_benefit=72_000,
             spouse_birth_year=1959,
         ).model_dump(),
@@ -100,5 +140,6 @@ def test_plan_compensation_uses_other_service_income_and_car_benefit_without_cou
     )
 
     assert result["recommended"]["salary_tax"]["total_income"] >= result["recommended"]["salary"] + 72_000
+    assert result["recommended"]["salary_tax"]["pension_fee"] > 0
     assert result["recommended"]["user_net_cash_salary"] < result["recommended"]["salary"]
     assert result["recommended"]["incremental_user_salary_tax"] > 0

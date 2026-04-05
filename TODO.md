@@ -6,7 +6,7 @@
 - `T004` Track ownership as of 1 January in the planning year and distinguish that from any suggested future ownership change.
 - `T005` Add explicit support for outside owners and the related closely-held-company exceptions.
 - `T006` Add drivmedelsförmån and bostadsförmån inputs instead of only the current simplified car-benefit field.
-- `T007` Track existing periodization fund balances so reversals can be validated against real opening reserves.
+- `T007` Track multiple historical periodization-fund layers and original tax years instead of only one user-entered opening balance.
 - `T008` Add a richer breakdown for scenarios where dividends exceed the service-tax ceiling and spill back into capital taxation.
 - `T009` Expand the PDF export with appendix pages, signature metadata, and per-owner municipality/tax details.
 - `T010` Add future production deployment tasks, including Nginx Proxy Manager hostname configuration and production URL wiring.

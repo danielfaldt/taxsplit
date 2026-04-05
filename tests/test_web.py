@@ -24,14 +24,18 @@ def test_index_renders():
     assert 'id="spouse-birth-year-label"' in response.text
     assert 'name="user_birth_year" type="number"' in response.text
     assert 'name="spouse_birth_year" type="number"' in response.text
-    assert 'name="user_other_service_income"' in response.text
+    assert 'name="user_other_salary_income"' in response.text
     assert 'name="planned_user_pension"' in response.text
+    assert 'name="car_benefit_is_pensionable"' in response.text
     assert 'name="periodization_fund_change"' in response.text
+    assert 'name="opening_periodization_fund_balance"' in response.text
     assert 'name="user_car_benefit"' in response.text
     assert 'id="tax-municipality"' in response.text
     assert 'id="include-church-fee"' in response.text
     assert 'id="tax-parish"' in response.text
     assert 'id="municipal-tax-rate"' in response.text
+    assert 'id="burial-fee-rate"' in response.text
+    assert 'id="church-fee-rate"' in response.text
     assert 'class="info-popover"' in response.text
     assert 'data-i18n="info.opening_retained_earnings"' in response.text
 
@@ -83,7 +87,8 @@ def test_client_script_persists_form_state_on_input():
     assert response.status_code == 200
     body = response.text
     assert 'form.addEventListener("input", saveStateIfFormField);' in body
-    assert 'localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));' in body
+    assert "localStorage.setItem(" in body
+    assert "_municipal_tax_manual_override" in body
     assert "formatInputValue" in body
     assert 'name="user_share_percentage"' in client.get("/").text
     assert "syncOwnershipDisplay" in body
@@ -109,6 +114,9 @@ def test_client_script_persists_form_state_on_input():
     assert "tax-municipality" in body
     assert "include-church-fee" in body
     assert "municipalTaxManualOverride" in body
+    assert "syncLocalTaxComponentInputs" in body
+    assert "burial-fee-rate" in client.get("/").text
+    assert "church-fee-rate" in client.get("/").text
     assert 'ownerSpecificText("birth_year", "user")' in body
     assert 'document.addEventListener("click"' in body
     assert "/api/export-pdf" in body

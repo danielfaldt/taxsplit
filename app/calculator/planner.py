@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 from .rules import (
     CAPITAL_TAX_RATE,
@@ -30,7 +30,11 @@ class PlanningInput(BaseModel):
     tax_parish: str = Field(default="")
     include_church_fee: bool = Field(default=False)
     target_user_net_income: float = Field(default=650_000, ge=0)
-    user_other_service_income: float = Field(default=0, ge=0)
+    user_other_salary_income: float = Field(
+        default=0,
+        ge=0,
+        validation_alias=AliasChoices("user_other_salary_income", "user_other_service_income"),
+    )
     spouse_external_salary: float = Field(default=520_000, ge=0)
     company_result_before_corporate_tax: float = Field(
         default=1_600_000,
@@ -39,7 +43,9 @@ class PlanningInput(BaseModel):
     )
     opening_retained_earnings: float = Field(default=0, ge=0)
     planned_user_pension: float = Field(default=0, ge=0)
+    car_benefit_is_pensionable: bool = Field(default=False)
     periodization_fund_change: float = Field(default=0)
+    opening_periodization_fund_balance: float = Field(default=0, ge=0)
     user_car_benefit: float = Field(default=0, ge=0)
     prior_year_company_cash_salaries: float = Field(default=520_000, ge=0)
     prior_year_user_company_salary: float = Field(default=520_000, ge=0)
@@ -48,7 +54,9 @@ class PlanningInput(BaseModel):
     user_share_cost_basis: float = Field(default=25_000, ge=0)
     spouse_share_cost_basis: float = Field(default=25_000, ge=0)
     user_share_percentage: float = Field(default=50.0, gt=0, lt=100)
-    municipal_tax_rate: float = Field(default=32.38, ge=25, le=40)
+    municipal_tax_rate: float | None = Field(default=None, ge=25, le=40)
+    burial_fee_rate: float | None = Field(default=None, ge=0, le=1)
+    church_fee_rate: float = Field(default=0.0, ge=0, le=2)
 
     @field_validator("year")
     @classmethod
@@ -56,6 +64,15 @@ class PlanningInput(BaseModel):
         if value not in SUPPORTED_YEARS:
             raise ValueError(f"Unsupported year. Choose one of: {', '.join(str(year) for year in SUPPORTED_YEARS)}.")
         return value
+
+    @model_validator(mode="after")
+    def apply_year_specific_tax_defaults(self) -> PlanningInput:
+        rule = SALARY_RULES[self.year]
+        if self.municipal_tax_rate is None:
+            self.municipal_tax_rate = rule.municipal_rate_default
+        if self.burial_fee_rate is None:
+            self.burial_fee_rate = rule.burial_fee_default
+        return self
 
     @property
     def user_share_fraction(self) -> float:
@@ -207,12 +224,15 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
     current_employer_contribution_rate = employer_contribution_rate(data.year, data.user_birth_year)
     employer_contributions = taxable_salary_base * current_employer_contribution_rate
     pension_special_payroll_tax = data.planned_user_pension * SPECIAL_PAYROLL_TAX_RATE
-    pension_limit = pension_deduction_limit(data.year, taxable_salary_base)
+    current_year_pension_base = planned_salary + (data.user_car_benefit if data.car_benefit_is_pensionable else 0.0)
+    prior_year_pension_base = data.prior_year_user_company_salary
+    pension_limit = pension_deduction_limit(data.year, max(current_year_pension_base, prior_year_pension_base))
     if data.planned_user_pension > pension_limit + 1:
         return {
             "valid": False,
             "pension_deduction_limit": round(pension_limit, 2),
             "max_periodization_allocation": 0.0,
+            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
         }
 
     profit_before_periodization = (
@@ -228,6 +248,14 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
             "valid": False,
             "pension_deduction_limit": round(pension_limit, 2),
             "max_periodization_allocation": round(max_periodization_allocation, 2),
+            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
+        }
+    if abs(min(data.periodization_fund_change, 0.0)) > data.opening_periodization_fund_balance + 1:
+        return {
+            "valid": False,
+            "pension_deduction_limit": round(pension_limit, 2),
+            "max_periodization_allocation": round(max_periodization_allocation, 2),
+            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
         }
 
     taxable_profit = max(profit_before_periodization - data.periodization_fund_change, 0.0)
@@ -243,10 +271,12 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
         "employer_contribution_rate": round(current_employer_contribution_rate, 4),
         "employer_contributions": round(employer_contributions, 2),
         "planned_user_pension": round(data.planned_user_pension, 2),
+        "car_benefit_is_pensionable": data.car_benefit_is_pensionable,
         "pension_special_payroll_tax": round(pension_special_payroll_tax, 2),
         "pension_deduction_limit": round(pension_limit, 2),
         "profit_before_periodization": round(profit_before_periodization, 2),
         "periodization_fund_change": round(data.periodization_fund_change, 2),
+        "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
         "max_periodization_allocation": round(max_periodization_allocation, 2),
         "taxable_profit": round(taxable_profit, 2),
         "corporate_tax": round(corporate_tax, 2),
@@ -263,6 +293,8 @@ def compute_dividend_outcome(
     baseline_earned_income: float,
     baseline_service_income: float,
     municipal_tax_rate: float,
+    burial_fee_rate: float,
+    church_fee_rate: float,
     birth_year: int,
 ) -> dict[str, float]:
     rule = DIVIDEND_RULES[year]
@@ -271,6 +303,8 @@ def compute_dividend_outcome(
         earned_income=baseline_earned_income,
         service_income=baseline_service_income,
         municipal_rate=municipal_tax_rate,
+        burial_fee_rate=burial_fee_rate,
+        church_fee_rate=church_fee_rate,
         birth_year=birth_year,
     )
     qualified_dividend = min(owner_dividend, owner_space)
@@ -284,6 +318,8 @@ def compute_dividend_outcome(
         earned_income=baseline_earned_income,
         service_income=baseline_service_income + service_taxed_dividend,
         municipal_rate=municipal_tax_rate,
+        burial_fee_rate=burial_fee_rate,
+        church_fee_rate=church_fee_rate,
         birth_year=birth_year,
     )
     incremental_service_tax = after_tax_with_service.total_tax - baseline_tax.total_tax
@@ -315,22 +351,28 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
     spaces = compute_dividend_spaces(data)
     user_baseline_tax = compute_personal_tax(
         year=data.year,
-        earned_income=0.0,
-        service_income=data.user_other_service_income,
+        earned_income=data.user_other_salary_income,
+        service_income=0.0,
         municipal_rate=data.municipal_tax_rate,
+        burial_fee_rate=data.burial_fee_rate,
+        church_fee_rate=data.church_fee_rate,
         birth_year=data.user_birth_year,
     )
     user_salary_tax = compute_personal_tax(
         year=data.year,
-        earned_income=planned_salary + data.user_car_benefit,
-        service_income=data.user_other_service_income,
+        earned_income=planned_salary + data.user_car_benefit + data.user_other_salary_income,
+        service_income=0.0,
         municipal_rate=data.municipal_tax_rate,
+        burial_fee_rate=data.burial_fee_rate,
+        church_fee_rate=data.church_fee_rate,
         birth_year=data.user_birth_year,
     )
     spouse_baseline_tax = compute_personal_tax(
         year=data.year,
         earned_income=data.spouse_external_salary,
         municipal_rate=data.municipal_tax_rate,
+        burial_fee_rate=data.burial_fee_rate,
+        church_fee_rate=data.church_fee_rate,
         birth_year=data.spouse_birth_year,
     )
     incremental_user_salary_tax = user_salary_tax.total_tax - user_baseline_tax.total_tax
@@ -343,9 +385,11 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
         owner_dividend=user_dividend,
         owner_space=spaces.user_space,
         year=data.year,
-        baseline_earned_income=planned_salary + data.user_car_benefit,
-        baseline_service_income=data.user_other_service_income,
+        baseline_earned_income=planned_salary + data.user_car_benefit + data.user_other_salary_income,
+        baseline_service_income=0.0,
         municipal_tax_rate=data.municipal_tax_rate,
+        burial_fee_rate=data.burial_fee_rate,
+        church_fee_rate=data.church_fee_rate,
         birth_year=data.user_birth_year,
     )
     spouse_dividend_result = compute_dividend_outcome(
@@ -355,6 +399,8 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
         baseline_earned_income=data.spouse_external_salary,
         baseline_service_income=0.0,
         municipal_tax_rate=data.municipal_tax_rate,
+        burial_fee_rate=data.burial_fee_rate,
+        church_fee_rate=data.church_fee_rate,
         birth_year=data.spouse_birth_year,
     )
 
@@ -449,7 +495,7 @@ def build_alternative_scenarios(data: PlanningInput, evaluated: list[dict[str, A
         return []
 
     state_threshold_gross = max(
-        SALARY_RULES[data.year].state_tax_threshold_taxable + 17_400 - data.user_other_service_income - data.user_car_benefit,
+        SALARY_RULES[data.year].state_tax_threshold_taxable + 17_400 - data.user_other_salary_income - data.user_car_benefit,
         0.0,
     )
     recommendations = []
@@ -506,7 +552,7 @@ def build_compensation_mix_analysis(
         recommended["dividend_spaces"]["user_space"] + recommended["dividend_spaces"]["spouse_space"]
     )
     state_threshold_gross = max(
-        SALARY_RULES[data.year].state_tax_threshold_taxable + 17_400 - data.user_other_service_income - data.user_car_benefit,
+        SALARY_RULES[data.year].state_tax_threshold_taxable + 17_400 - data.user_other_salary_income - data.user_car_benefit,
         0.0,
     )
 
@@ -741,7 +787,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
             {"key": "assumption.official_rule_data", "params": {}},
             {"key": "assumption.spouse_salary_affects_service_tax", "params": {}},
             {"key": "assumption.birth_year_affects_tax", "params": {}},
-            {"key": "assumption.user_other_service_income", "params": {}},
+            {"key": "assumption.user_other_salary_income", "params": {}},
             {"key": "assumption.car_benefit_cash_vs_tax", "params": {}},
             {"key": "assumption.pension_limit", "params": {}},
             {"key": "assumption.periodization_fund", "params": {}},
