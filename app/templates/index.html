@@ -68,12 +68,12 @@
             </label>
 
             <label class="field">
-              <span data-i18n="field.user_birth_year">Användarens födelseår</span>
+              <span id="user-birth-year-label" data-i18n="field.user_birth_year">Användarens födelseår</span>
               <input name="user_birth_year" type="number" inputmode="numeric" min="1900" max="2010" step="1" value="{{ defaults.user_birth_year if defaults.user_birth_year is defined else 1985 }}">
             </label>
 
             <label class="field">
-              <span data-i18n="field.spouse_birth_year">Makes/makas födelseår</span>
+              <span id="spouse-birth-year-label" data-i18n="field.spouse_birth_year">Makes/makas födelseår</span>
               <input name="spouse_birth_year" type="number" inputmode="numeric" min="1900" max="2010" step="1" value="{{ defaults.spouse_birth_year if defaults.spouse_birth_year is defined else 1985 }}">
             </label>
           </div>
@@ -123,7 +123,6 @@
                 </details>
               </div>
               <input name="opening_retained_earnings" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.opening_retained_earnings }}">
-              <small data-i18n="field.opening_retained_earnings_hint">Use the distributable retained earnings from the latest adopted accounts. Current-year profit is entered separately above.</small>
             </label>
 
             <label class="field">

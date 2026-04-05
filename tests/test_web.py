@@ -16,6 +16,8 @@ def test_index_renders():
     assert 'name="spouse_display_name"' in response.text
     assert 'name="user_birth_year"' in response.text
     assert 'name="spouse_birth_year"' in response.text
+    assert 'id="user-birth-year-label"' in response.text
+    assert 'id="spouse-birth-year-label"' in response.text
     assert 'name="user_birth_year" type="number"' in response.text
     assert 'name="spouse_birth_year" type="number"' in response.text
     assert 'name="user_other_service_income"' in response.text
@@ -88,3 +90,5 @@ def test_client_script_persists_form_state_on_input():
     assert "tax-municipality" in body
     assert "include-church-fee" in body
     assert "municipalTaxManualOverride" in body
+    assert 'ownerSpecificText("birth_year", "user")' in body
+    assert 'document.addEventListener("click"' in body

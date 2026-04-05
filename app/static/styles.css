@@ -141,6 +141,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
 }
 
 .field-span-2 {
@@ -152,9 +153,9 @@ body {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.15;
-  min-height: 2.15em;
+  min-height: 3.5em;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .field small {
@@ -167,6 +168,7 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  position: relative;
 }
 
 .label-text {
@@ -174,7 +176,7 @@ body {
 }
 
 .info-popover {
-  position: relative;
+  position: static;
   flex: 0 0 auto;
 }
 
@@ -204,9 +206,9 @@ body {
 
 .info-panel {
   position: absolute;
-  right: 0;
+  left: 0;
   top: calc(100% + 8px);
-  width: min(300px, 70vw);
+  width: min(320px, calc(100vw - 64px));
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 14px;

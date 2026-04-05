@@ -22,6 +22,8 @@ const userOtherServiceIncomeLabel = document.querySelector("#user-other-service-
 const spouseExternalSalaryLabel = document.querySelector("#spouse-external-salary-label");
 const userCarBenefitLabel = document.querySelector("#user-car-benefit-label");
 const plannedUserPensionLabel = document.querySelector("#planned-user-pension-label");
+const userBirthYearLabel = document.querySelector("#user-birth-year-label");
+const spouseBirthYearLabel = document.querySelector("#spouse-birth-year-label");
 const taxMunicipalitySelect = document.querySelector("#tax-municipality");
 const taxParishSelect = document.querySelector("#tax-parish");
 const taxParishField = document.querySelector("#tax-parish-field");
@@ -37,6 +39,7 @@ const spouseSavedDividendSpaceLabel = document.querySelector("#spouse-saved-divi
 const userShareCostBasisLabel = document.querySelector("#user-share-cost-basis-label");
 const spouseShareCostBasisLabel = document.querySelector("#spouse-share-cost-basis-label");
 const numericInputs = Array.from(document.querySelectorAll(".js-number"));
+const infoPopovers = Array.from(document.querySelectorAll(".info-popover"));
 
 const TRANSLATIONS = {
   sv: {
@@ -410,6 +413,11 @@ function t(key, params = {}) {
   return interpolate(getTranslation(key), params);
 }
 
+function formatDisplayName(value) {
+  const normalized = String(value || "").trim().toLocaleLowerCase("sv-SE");
+  return normalized.replace(/(^|[\s-/])([\p{L}\p{N}])/gu, (match, prefix, char) => `${prefix}${char.toLocaleUpperCase("sv-SE")}`);
+}
+
 function applyStaticTranslations() {
   document.documentElement.lang = currentLanguage;
   languageSwitch.value = currentLanguage;
@@ -532,6 +540,7 @@ function ownerSpecificText(kind, ownerType, params = {}) {
   const owner = getOwnerName(ownerType);
 
   if (currentLanguage === "sv") {
+    if (kind === "birth_year") return `Födelseår för ${owner}`;
     if (kind === "target_net_income") return `Önskad nettoinkomst efter skatt för ${owner}`;
     if (kind === "other_service_income") return `Övriga tjänsteinkomster för ${owner}`;
     if (kind === "external_salary") return `Lön från annan arbetsgivare för ${owner}`;
@@ -546,6 +555,7 @@ function ownerSpecificText(kind, ownerType, params = {}) {
     if (kind === "scenario_net") return `Netto för ${owner}`;
   }
 
+  if (kind === "birth_year") return `Birth year for ${owner}`;
   if (kind === "target_net_income") return `Desired net income after tax for ${owner}`;
   if (kind === "other_service_income") return `Other service income for ${owner}`;
   if (kind === "external_salary") return `Salary from another employer for ${owner}`;
@@ -574,6 +584,8 @@ function setFieldLabels(year) {
     salaryBasisYear,
   });
   targetNetIncomeLabel.textContent = ownerSpecificText("target_net_income", "user");
+  userBirthYearLabel.textContent = ownerSpecificText("birth_year", "user");
+  spouseBirthYearLabel.textContent = ownerSpecificText("birth_year", "spouse");
   userOtherServiceIncomeLabel.textContent = ownerSpecificText("other_service_income", "user");
   spouseExternalSalaryLabel.textContent = ownerSpecificText("external_salary", "spouse");
   userCarBenefitLabel.textContent = ownerSpecificText("car_benefit", "user");
@@ -631,7 +643,7 @@ function populateTaxMunicipalities(selectedMunicipality = "") {
     `<option value="">${placeholder}</option>`,
     ...municipalities.map((item) => {
       const selected = item.municipality === selectedValue ? " selected" : "";
-      return `<option value="${item.municipality}"${selected}>${item.municipality}</option>`;
+      return `<option value="${item.municipality}"${selected}>${formatDisplayName(item.municipality)}</option>`;
     }),
   ].join("");
 }
@@ -646,7 +658,7 @@ function populateTaxParishes(selectedParish = "") {
     `<option value="">${placeholder}</option>`,
     ...parishes.map((item) => {
       const selected = item.parish === selectedValue ? " selected" : "";
-      return `<option value="${item.parish}"${selected}>${item.parish}</option>`;
+      return `<option value="${item.parish}"${selected}>${formatDisplayName(item.parish)}</option>`;
     }),
   ].join("");
 
@@ -1101,6 +1113,23 @@ languageSwitch.addEventListener("change", (event) => {
     renderAlternatives(lastResult);
     renderAssumptions(lastResult);
   }
+});
+
+document.addEventListener("click", (event) => {
+  infoPopovers.forEach((popover) => {
+    if (popover.open && !popover.contains(event.target)) {
+      popover.open = false;
+    }
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+  infoPopovers.forEach((popover) => {
+    popover.open = false;
+  });
 });
 
 form.addEventListener("submit", async (event) => {
