@@ -4,6 +4,8 @@ Skatteuttag is a developer-focused web application for Swedish compensation plan
 
 The app takes one planning year as the controlling input and derives the relevant rule years from that choice. Salary tax is computed for the selected year, while the wage-linked part of the dividend room uses the salary-base year that legally feeds into that planning year.
 
+The primary company input is the company result before corporate tax. The app then models owner salary, employer contributions, and corporate tax from that starting point.
+
 ## Features
 
 - One-year planning input with explicit salary-base-year mapping

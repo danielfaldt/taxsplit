@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from .rules import (
     CAPITAL_TAX_RATE,
@@ -22,7 +22,11 @@ class PlanningInput(BaseModel):
     year: int = Field(default=2026)
     target_user_net_income: float = Field(default=650_000, ge=0)
     spouse_external_salary: float = Field(default=520_000, ge=0)
-    company_profit_before_owner_salary: float = Field(default=1_600_000, ge=0)
+    company_result_before_corporate_tax: float = Field(
+        default=1_600_000,
+        ge=0,
+        validation_alias=AliasChoices("company_result_before_corporate_tax", "company_profit_before_owner_salary"),
+    )
     opening_retained_earnings: float = Field(default=0, ge=0)
     prior_year_company_cash_salaries: float = Field(default=520_000, ge=0)
     prior_year_user_company_salary: float = Field(default=520_000, ge=0)
@@ -162,7 +166,7 @@ def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
 
 def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[str, float]:
     employer_contributions = planned_salary * EMPLOYER_CONTRIBUTION_RATE
-    profit_after_salary_cost = data.company_profit_before_owner_salary - planned_salary - employer_contributions
+    profit_after_salary_cost = data.company_result_before_corporate_tax - planned_salary - employer_contributions
     taxable_profit = max(profit_after_salary_cost, 0.0)
     corporate_tax = taxable_profit * CORPORATE_TAX_RATE
     post_tax_profit = taxable_profit - corporate_tax
@@ -385,7 +389,7 @@ def build_alternative_scenarios(data: PlanningInput, evaluated: list[dict[str, A
 
 def plan_compensation(payload: dict[str, Any]) -> dict[str, Any]:
     data = PlanningInput.model_validate(payload)
-    max_salary = data.company_profit_before_owner_salary / (1 + EMPLOYER_CONTRIBUTION_RATE)
+    max_salary = data.company_result_before_corporate_tax / (1 + EMPLOYER_CONTRIBUTION_RATE)
     step = 5_000 if max_salary > 300_000 else 2_500
     evaluated: list[dict[str, Any]] = []
 
