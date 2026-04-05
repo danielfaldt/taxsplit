@@ -44,6 +44,7 @@ docker compose --env-file .env.dev run --rm test
 ## Conventions
 
 - Comments and markdown must stay in English.
+- Chat communication with the admin/developer must follow the language used by the admin/developer.
 - Use `apply_patch` for manual file edits.
 - Keep the year linkage explicit: one chosen planning year, plus derived salary-base year.
 
