@@ -47,7 +47,7 @@ const TRANSLATIONS = {
     "brand.app_name": "Skatteuttag",
     "meta.description": "Löne- och utdelningsplanering för ett svenskt aktiebolag med tydlig årskopplad skattelogik.",
     "language.label": "Språk",
-    "button.export_pdf": "Exportera PDF",
+    "button.export_pdf": "Exportera till pdf",
     "button.exporting_pdf": "Exporterar PDF...",
     "hero.eyebrow": "Svensk skatteplanering för ägarledda bolag",
     "hero.lede": "Planera lön och utdelning i ett svenskt aktiebolag med ett valt planeringsår. Appen förklarar hur utbetalningsåret och lönebasåret hänger ihop.",
