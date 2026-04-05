@@ -1,5 +1,5 @@
 # TODO
-
+- [ ] T013 - Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
 - `T001` Add support for planning years beyond `2026` once official constants and K10 rule details are available.
 - `T002` Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
 - `T003` Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
