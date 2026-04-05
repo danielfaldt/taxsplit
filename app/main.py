@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from .calculator.planner import PlanningInput, build_ownership_analysis, plan_compensation
 from .calculator.rules import SUPPORTED_YEARS
 from .config import settings
+from .pdf_report import generate_pdf_report
 from .tax_rates import municipality_payload
 
 
@@ -63,6 +64,22 @@ def municipal_tax(year: int) -> JSONResponse:
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return JSONResponse(result)
+
+
+@app.post("/api/export-pdf")
+async def export_pdf(request: Request) -> Response:
+    payload = await request.json()
+    language = payload.pop("language", "sv")
+    try:
+        pdf_bytes = generate_pdf_report(payload, language=language)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="skatteuttag-report.pdf"'},
+    )
 
 
 @app.get("/health")

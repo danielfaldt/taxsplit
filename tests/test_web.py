@@ -11,6 +11,7 @@ def test_index_renders():
     assert response.status_code == 200
     assert "Skatteuttag" in response.text
     assert 'id="language-switch"' in response.text
+    assert 'id="export-pdf"' in response.text
     assert 'id="user-share-slider"' in response.text
     assert 'name="user_display_name"' in response.text
     assert 'name="spouse_display_name"' in response.text
@@ -60,6 +61,13 @@ def test_api_municipal_tax_returns_catalog():
     assert first["parishes"]
 
 
+def test_api_export_pdf_returns_pdf():
+    response = client.post("/api/export-pdf", json={"year": 2026, "language": "sv"})
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content.startswith(b"%PDF")
+
+
 def test_security_and_sitemap_exist():
     assert client.get("/security.txt").status_code == 200
     assert client.get("/sitemap.xml").status_code == 200
@@ -92,3 +100,5 @@ def test_client_script_persists_form_state_on_input():
     assert "municipalTaxManualOverride" in body
     assert 'ownerSpecificText("birth_year", "user")' in body
     assert 'document.addEventListener("click"' in body
+    assert "/api/export-pdf" in body
+    assert "button.export_pdf" in body

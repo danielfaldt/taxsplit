@@ -93,6 +93,16 @@ body {
   font-weight: 600;
 }
 
+.pill-button {
+  border: 0;
+  line-height: 1;
+}
+
+.pill-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .language-switch {
   display: inline-flex;
   align-items: center;

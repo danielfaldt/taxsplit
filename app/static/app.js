@@ -4,6 +4,7 @@ const LANGUAGE_KEY = "skatteuttag-language";
 const form = document.querySelector("#planner-form");
 const yearInput = document.querySelector("#year");
 const languageSwitch = document.querySelector("#language-switch");
+const exportPdfButton = document.querySelector("#export-pdf");
 const errorBox = document.querySelector("#error-box");
 const summaryBox = document.querySelector("#recommendation-summary");
 const breakdownGrid = document.querySelector("#breakdown-grid");
@@ -46,6 +47,8 @@ const TRANSLATIONS = {
     "brand.app_name": "Skatteuttag",
     "meta.description": "Löne- och utdelningsplanering för ett svenskt aktiebolag med tydlig årskopplad skattelogik.",
     "language.label": "Språk",
+    "button.export_pdf": "Exportera PDF",
+    "button.exporting_pdf": "Exporterar PDF...",
     "hero.eyebrow": "Svensk skatteplanering för ägarledda bolag",
     "hero.lede": "Planera lön och utdelning i ett svenskt aktiebolag med ett valt planeringsår. Appen förklarar hur utbetalningsåret och lönebasåret hänger ihop.",
     "hero.supported_years": "Stödda år: {years}",
@@ -183,6 +186,7 @@ const TRANSLATIONS = {
     "ownership.loading_title": "Ägarfördelningsanalys pågår",
     "ownership.loading_detail": "Rekommendationen visas redan. Nu jämför appen flera ägarfördelningar i bakgrunden.",
     "error.calculation_failed": "Beräkningen misslyckades.",
+    "error.export_failed": "PDF-exporten misslyckades.",
     "status.calculating": "Beräknar rekommendation...",
     "button.calculating": "Beräknar...",
     "rule.main": "Huvudregeln",
@@ -216,6 +220,8 @@ const TRANSLATIONS = {
     "brand.app_name": "TaxSplit",
     "meta.description": "Salary and dividend planning for a Swedish limited company with transparent year-based tax logic.",
     "language.label": "Language",
+    "button.export_pdf": "Export PDF",
+    "button.exporting_pdf": "Exporting PDF...",
     "hero.eyebrow": "Swedish tax planning for owner-managed companies",
     "hero.lede": "Plan salary and dividends for a Swedish limited company with one chosen planning year. The app explains how the payout year and the salary-base year interact.",
     "hero.supported_years": "Supported years: {years}",
@@ -353,6 +359,7 @@ const TRANSLATIONS = {
     "ownership.loading_title": "Ownership analysis in progress",
     "ownership.loading_detail": "The recommendation is already shown. The app is now comparing multiple ownership splits in the background.",
     "error.calculation_failed": "Calculation failed.",
+    "error.export_failed": "PDF export failed.",
     "status.calculating": "Calculating recommendation...",
     "button.calculating": "Calculating...",
     "rule.main": "Main rule",
@@ -415,7 +422,15 @@ function t(key, params = {}) {
 
 function formatDisplayName(value) {
   const normalized = String(value || "").trim().toLocaleLowerCase("sv-SE");
-  return normalized.replace(/(^|[\s-/])([\p{L}\p{N}])/gu, (match, prefix, char) => `${prefix}${char.toLocaleUpperCase("sv-SE")}`);
+  return normalized
+    .split(/(\s+|\/|-)/)
+    .map((segment) => {
+      if (!segment || /^\s+$/.test(segment) || segment === "/" || segment === "-") {
+        return segment;
+      }
+      return segment.charAt(0).toLocaleUpperCase("sv-SE") + segment.slice(1);
+    })
+    .join("");
 }
 
 function applyStaticTranslations() {
@@ -1004,6 +1019,40 @@ async function fetchOwnershipAnalysis(payload) {
   return response.json();
 }
 
+async function exportPdf() {
+  clearError();
+  saveState();
+  const payload = { ...formToObject(), language: currentLanguage };
+  exportPdfButton.disabled = true;
+  exportPdfButton.textContent = t("button.exporting_pdf");
+
+  try {
+    const response = await fetch("/api/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || t("error.export_failed"));
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "skatteuttag-report.pdf";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  } finally {
+    exportPdfButton.disabled = false;
+    exportPdfButton.textContent = t("button.export_pdf");
+  }
+}
+
 async function submitForm() {
   clearError();
   saveState();
@@ -1113,6 +1162,10 @@ languageSwitch.addEventListener("change", (event) => {
     renderAlternatives(lastResult);
     renderAssumptions(lastResult);
   }
+});
+
+exportPdfButton.addEventListener("click", () => {
+  exportPdf().catch((error) => setError(error.message));
 });
 
 document.addEventListener("click", (event) => {

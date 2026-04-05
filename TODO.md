@@ -8,5 +8,5 @@
 - `T006` Add drivmedelsförmån and bostadsförmån inputs instead of only the current simplified car-benefit field.
 - `T007` Track existing periodization fund balances so reversals can be validated against real opening reserves.
 - `T008` Add a richer breakdown for scenarios where dividends exceed the service-tax ceiling and spill back into capital taxation.
-- `T009` Add export options for scenario comparison and printable advisor notes.
+- `T009` Expand the PDF export with appendix pages, signature metadata, and per-owner municipality/tax details.
 - `T010` Add future production deployment tasks, including Nginx Proxy Manager hostname configuration and production URL wiring.

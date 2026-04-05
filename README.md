@@ -13,6 +13,7 @@ The primary company input is the company result before corporate tax. The app th
 - Locale-friendly number formatting with thousands separators in the browser
 - Municipal-tax auto-fill from official Skatteverket municipality and parish tables for `2025` and `2026`
 - Salary and dividend recommendation aimed at the user's target annual net income
+- Server-generated PDF export for formal review by advisors, auditors, or the user
 - Birth-year-aware personal tax and employer contribution handling
 - Adjustable ownership split between spouses, plus an indicative ownership suggestion when a different split lowers total tax
 - Additional planning inputs for user service income, car benefit, occupational pension, and periodization fund adjustments
