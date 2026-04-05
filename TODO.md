@@ -24,4 +24,4 @@
 
 ## Closed
 
-- [x] T015 · rav Förklaring av hur analysen gått till beskriven i text/formel eller liknande
+- [x] T015 · dUmmY
