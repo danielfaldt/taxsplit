@@ -16,11 +16,17 @@ const appNameElement = document.querySelector("#app-name");
 const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
 const userDisplayNameInput = document.querySelector("#user-display-name");
 const spouseDisplayNameInput = document.querySelector("#spouse-display-name");
+const targetNetIncomeLabel = document.querySelector("#target-net-income-label");
+const spouseExternalSalaryLabel = document.querySelector("#spouse-external-salary-label");
 const userShareLabel = document.querySelector("#user-share-label");
 const spouseShareLabel = document.querySelector("#spouse-share-label");
 const userShareDisplay = document.querySelector("#user-share-display");
 const spouseShareDisplay = document.querySelector("#spouse-share-display");
 const userShareSlider = document.querySelector("#user-share-slider");
+const userSavedDividendSpaceLabel = document.querySelector("#user-saved-dividend-space-label");
+const spouseSavedDividendSpaceLabel = document.querySelector("#spouse-saved-dividend-space-label");
+const userShareCostBasisLabel = document.querySelector("#user-share-cost-basis-label");
+const spouseShareCostBasisLabel = document.querySelector("#spouse-share-cost-basis-label");
 const numericInputs = Array.from(document.querySelectorAll(".js-number"));
 
 const TRANSLATIONS = {
@@ -123,14 +129,14 @@ const TRANSLATIONS = {
     "noun.qualified_dividend": "kvalificerade utdelning",
     "noun.service_taxed_excess": "tjänstebeskattade överskjutande del",
     "ownership.title": "Föreslagen ägarfördelning",
-    "ownership.better_split": "Modellen hittar lägre total skatt om användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %.",
+    "ownership.better_split": "Modellen hittar lägre total skatt om {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "ownership.tax_saving": "Beräknad minskning av total skatt: {taxSaving}.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "rule.main": "Huvudregeln",
     "rule.simplification": "Förenklingsregeln",
     "rule.new_combined": "2026 års kombinerade regel",
     "note.salary_basis_year": "Planeringsår {planningYear} använder lönedata från {salaryBasisYear} för det lönebaserade utdelningsutrymmet.",
-    "note.ownership_structure": "Modellen utgår från att användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %, och att endast användaren tar lön från bolaget.",
+    "note.ownership_structure": "Modellen utgår från att {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %, och att endast {userName} tar lön från bolaget.",
     "note.ownership_suggestion_scope": "Ägarfördelningsförslaget är en indikativ skattejämförelse och utgår från att sparat utdelningsutrymme och omkostnadsbelopp följer den nya ekonomiska fördelningen.",
     "note.old_rule_salary_requirement_met": "Det gamla lönekravet är uppfyllt eftersom bolagslönen under basåret är minst {salaryRequirement} SEK.",
     "note.old_rule_salary_requirement_not_met": "Det gamla lönekravet är inte uppfyllt. Bolagslönen under basåret behöver vara cirka {salaryRequirement} SEK för att låsa upp lönebaserat utrymme för 2025.",
@@ -138,12 +144,12 @@ const TRANSLATIONS = {
     "note.new_rule_combined_method": "2026 års regelverk använder en kombinerad metod: grundbelopp, lönebaserat utrymme, ränta på omkostnadsbelopp över 100 000 SEK och sparat utrymme.",
     "note.new_rule_wage_space_positive": "Det lönebaserade utrymmet är positivt eftersom bolagets kontanta löner under basåret överstiger avdraget på {wageDeduction} SEK.",
     "note.new_rule_wage_space_zero": "Det lönebaserade utrymmet är noll eftersom bolagets kontanta löner under basåret inte överstiger avdraget på {wageDeduction} SEK.",
-    "assumption.swedish_limited_company": "Den aktuella modellen avser ett svenskt privat aktiebolag med två makar där användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %.",
-    "assumption.only_user_company_salary": "Endast användaren antas ta lön från bolaget.",
+    "assumption.swedish_limited_company": "Den aktuella modellen avser ett svenskt privat aktiebolag med två makar där {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
+    "assumption.only_user_company_salary": "Endast {userName} antas ta lön från bolaget.",
     "assumption.dividend_limited_to_profit_and_retained": "Utdelning begränsas till aktuell vinst efter lönekostnad och eventuell ingående fri vinst som användaren anger.",
     "assumption.municipal_rate_editable": "Kommunalskatten kan ändras av användaren och förifylls med rikssnittet för valt år.",
     "assumption.official_rule_data": "Appen modellerar årsspecifik löneskatt och 3:12-liknande utdelningsskatt med officiella regeldata för 2025 och 2026.",
-    "assumption.spouse_salary_affects_service_tax": "Tjänstebeskattad överskjutande utdelning modelleras som extra tjänsteinkomst där makes/makas externa lön påverkar dennes skatteeffekt.",
+    "assumption.spouse_salary_affects_service_tax": "Tjänstebeskattad överskjutande utdelning modelleras som extra tjänsteinkomst där lönen från annan arbetsgivare för {spouseName} påverkar skatteeffekten.",
     "explanation.salary_uses_planning_year": "Lön som tas ut under {planningYear} beskattas med lönereglerna för {planningYear}.",
     "explanation.dividend_uses_salary_basis_year": "Utdelningsutrymmet för {planningYear} använder lönebasåret {salaryBasisYear}.",
     "explanation.recommendation_scoring": "Rekommendationen minimerar först avståndet till användarens nettomål och föredrar därefter lägre total skatt."
@@ -247,14 +253,14 @@ const TRANSLATIONS = {
     "noun.qualified_dividend": "qualified dividend",
     "noun.service_taxed_excess": "service-taxed excess",
     "ownership.title": "Suggested ownership split",
-    "ownership.better_split": "The model finds lower total tax if the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%.",
+    "ownership.better_split": "The model finds lower total tax if {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
     "ownership.tax_saving": "Estimated total-tax reduction: {taxSaving}.",
     "error.calculation_failed": "Calculation failed.",
     "rule.main": "Main rule",
     "rule.simplification": "Simplification rule",
     "rule.new_combined": "2026 combined rule",
     "note.salary_basis_year": "Planning year {planningYear} uses salary data from {salaryBasisYear} for the wage-linked dividend room.",
-    "note.ownership_structure": "The model uses an ownership split where the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%, and only the user receives salary from the company.",
+    "note.ownership_structure": "The model uses an ownership split where {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%, and only {userName} receives salary from the company.",
     "note.ownership_suggestion_scope": "The ownership suggestion is an indicative tax comparison and assumes saved dividend room and cost basis follow the new economic split.",
     "note.old_rule_salary_requirement_met": "The old salary-threshold test is met because prior-year company salary is at least {salaryRequirement} SEK.",
     "note.old_rule_salary_requirement_not_met": "The old salary-threshold test is not met. Prior-year company salary needs about {salaryRequirement} SEK to unlock wage-based space for 2025.",
@@ -262,12 +268,12 @@ const TRANSLATIONS = {
     "note.new_rule_combined_method": "The 2026 rule set uses one combined method: ground amount, wage-based room, interest on cost basis above 100,000 SEK, and saved room.",
     "note.new_rule_wage_space_positive": "The wage-based room is positive because prior-year company cash salaries exceed the deduction amount of {wageDeduction} SEK.",
     "note.new_rule_wage_space_zero": "The wage-based room is zero because prior-year company cash salaries do not exceed the deduction amount of {wageDeduction} SEK.",
-    "assumption.swedish_limited_company": "The current model covers a Swedish private limited company with two spouse owners where the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%.",
-    "assumption.only_user_company_salary": "Only the user receives salary from the company.",
+    "assumption.swedish_limited_company": "The current model covers a Swedish private limited company with two spouse owners where {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
+    "assumption.only_user_company_salary": "Only {userName} receives salary from the company.",
     "assumption.dividend_limited_to_profit_and_retained": "Dividends are limited to current-year profit after salary cost and any opening retained earnings entered by the user.",
     "assumption.municipal_rate_editable": "The municipal tax rate is user-editable and defaults to the national average for the selected year.",
     "assumption.official_rule_data": "The app models year-specific salary tax and 3:12-style dividend tax using official 2025 and 2026 rule data.",
-    "assumption.spouse_salary_affects_service_tax": "Service-taxed excess dividend is modelled as additional service income with the spouse's external salary affecting only the spouse's personal tax outcome.",
+    "assumption.spouse_salary_affects_service_tax": "Service-taxed excess dividend is modelled as additional service income with salary from another employer for {spouseName} affecting that personal tax outcome.",
     "explanation.salary_uses_planning_year": "Salary paid during {planningYear} is taxed using {planningYear} salary-tax rules.",
     "explanation.dividend_uses_salary_basis_year": "Dividend room for {planningYear} uses the salary base year {salaryBasisYear}.",
     "explanation.recommendation_scoring": "The recommendation minimizes distance to the user's after-tax target and then prefers lower total tax burden."
@@ -384,6 +390,33 @@ function ownerLabel(ownerType, nounKey) {
   return `${getOwnerName(ownerType)} ${t(nounKey)}`;
 }
 
+function ownerSpecificText(kind, ownerType, params = {}) {
+  const owner = getOwnerName(ownerType);
+
+  if (currentLanguage === "sv") {
+    if (kind === "target_net_income") return `Önskad nettoinkomst efter skatt för ${owner}`;
+    if (kind === "external_salary") return `Lön från annan arbetsgivare för ${owner}`;
+    if (kind === "salary_from_company") return `Lön från bolaget under ${params.salaryBasisYear} för ${owner}`;
+    if (kind === "saved_dividend_space") return `Sparat utdelningsutrymme för ${owner}`;
+    if (kind === "share_cost_basis") return `Omkostnadsbelopp för ${owner}`;
+    if (kind === "salary_tax") return `Löneskatt för ${owner}`;
+    if (kind === "net_from_company") return `Netto från bolaget för ${owner}`;
+    if (kind === "net_from_company_sub") return `Närmaste modellerade nivå mot målet för ${owner}`;
+    if (kind === "scenario_net") return `Netto för ${owner}`;
+  }
+
+  if (kind === "target_net_income") return `Desired net income after tax for ${owner}`;
+  if (kind === "external_salary") return `Salary from another employer for ${owner}`;
+  if (kind === "salary_from_company") return `Salary from the company in ${params.salaryBasisYear} for ${owner}`;
+  if (kind === "saved_dividend_space") return `Saved dividend space for ${owner}`;
+  if (kind === "share_cost_basis") return `Share cost basis for ${owner}`;
+  if (kind === "salary_tax") return `Salary tax for ${owner}`;
+  if (kind === "net_from_company") return `Net income from company for ${owner}`;
+  if (kind === "net_from_company_sub") return `Closest modelled value to the target for ${owner}`;
+  if (kind === "scenario_net") return `Net income for ${owner}`;
+  return owner;
+}
+
 function setFieldLabels(year) {
   const salaryBasisYear = Number(year) - 1;
   document.querySelector("#salary-basis-text").textContent = t("salary_basis.text", {
@@ -393,9 +426,15 @@ function setFieldLabels(year) {
   document.querySelector("#company-salary-label").textContent = t("field.prior_year_company_cash_salaries", {
     salaryBasisYear,
   });
-  document.querySelector("#user-salary-label").textContent = t("field.prior_year_user_company_salary", {
+  document.querySelector("#user-salary-label").textContent = ownerSpecificText("salary_from_company", "user", {
     salaryBasisYear,
   });
+  targetNetIncomeLabel.textContent = ownerSpecificText("target_net_income", "user");
+  spouseExternalSalaryLabel.textContent = ownerSpecificText("external_salary", "spouse");
+  userSavedDividendSpaceLabel.textContent = ownerSpecificText("saved_dividend_space", "user");
+  spouseSavedDividendSpaceLabel.textContent = ownerSpecificText("saved_dividend_space", "spouse");
+  userShareCostBasisLabel.textContent = ownerSpecificText("share_cost_basis", "user");
+  spouseShareCostBasisLabel.textContent = ownerSpecificText("share_cost_basis", "spouse");
 }
 
 function syncOwnershipDisplay() {
@@ -404,6 +443,7 @@ function syncOwnershipDisplay() {
   spouseShareLabel.textContent = getOwnerName("spouse");
   userShareDisplay.textContent = `${formatInputValue(userShare, "percent")} %`;
   spouseShareDisplay.textContent = `${formatInputValue(100 - userShare, "percent")} %`;
+  setFieldLabels(yearInput.value);
 }
 
 function restoreState() {
@@ -451,7 +491,12 @@ function translateMessage(item) {
   if (typeof item === "string") {
     return item;
   }
-  return t(item.key, item.params || {});
+  const params = {
+    userName: getOwnerName("user"),
+    spouseName: getOwnerName("spouse"),
+    ...(item.params || {}),
+  };
+  return t(item.key, params);
 }
 
 function renderMetrics(result) {
@@ -460,7 +505,7 @@ function renderMetrics(result) {
   summaryBox.innerHTML = `
     ${metric(t("metric.recommended_salary"), formatCurrency(recommendation.salary), t("metric.recommended_salary_sub"))}
     ${metric(t("metric.recommended_dividend"), formatCurrency(recommendation.total_dividend), t("metric.recommended_dividend_sub"))}
-    ${metric(t("metric.user_net"), formatCurrency(recommendation.user_net_from_company), t("metric.user_net_sub"))}
+    ${metric(ownerSpecificText("net_from_company", "user"), formatCurrency(recommendation.user_net_from_company), ownerSpecificText("net_from_company_sub", "user"))}
     ${metric(t("metric.household_net"), formatCurrency(recommendation.household_net_from_company), t("metric.household_net_sub"))}
     ${metric(t("metric.distance_to_target"), formatCurrency(recommendation.distance_to_target), recommendation.shortfall_to_target > 0 ? t("metric.distance_target_shortfall") : t("metric.distance_target_reached"))}
     ${metric(t("metric.total_tax_burden"), formatCurrency(recommendation.total_tax_burden), t("metric.total_tax_burden_sub"))}
@@ -477,6 +522,8 @@ function renderOwnershipSuggestion(result) {
     <div class="note">
       <strong>${t("ownership.title")}</strong><br>
       ${t("ownership.better_split", {
+        userName: getOwnerName("user"),
+        spouseName: getOwnerName("spouse"),
         userSharePercentage: formatInputValue(suggestion.suggested_user_share_percentage, "percent"),
         spouseSharePercentage: formatInputValue(suggestion.suggested_spouse_share_percentage, "percent"),
       })}<br>
@@ -515,7 +562,7 @@ function renderBreakdown(result) {
       [t("label.corporate_tax"), formatCurrency(company.corporate_tax)],
       [t("label.available_dividend_cash"), formatCurrency(company.available_dividend_cash)],
     ]),
-    breakdownCard(t("breakdown.user_salary_tax"), [
+    breakdownCard(ownerSpecificText("salary_tax", "user"), [
       [t("label.gross_salary"), formatCurrency(recommendation.salary)],
       [t("label.base_deduction"), formatCurrency(salaryTax.base_deduction)],
       [t("label.municipal_tax"), formatCurrency(salaryTax.municipal_tax)],
@@ -561,7 +608,7 @@ function renderAlternatives(result) {
           <div class="kv">
             <div>${t("scenario.salary")}</div><div>${formatCurrency(scenario.salary)}</div>
             <div>${t("scenario.total_dividend")}</div><div>${formatCurrency(scenario.total_dividend)}</div>
-            <div>${t("scenario.user_net")}</div><div>${formatCurrency(scenario.user_net_from_company)}</div>
+            <div>${ownerSpecificText("scenario_net", "user")}</div><div>${formatCurrency(scenario.user_net_from_company)}</div>
             <div>${t("scenario.total_tax_burden")}</div><div>${formatCurrency(scenario.total_tax_burden)}</div>
           </div>
         </article>

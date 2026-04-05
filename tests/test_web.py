@@ -37,3 +37,4 @@ def test_client_script_persists_form_state_on_input():
     assert "formatInputValue" in body
     assert 'name="user_share_percentage"' in client.get("/").text
     assert "syncOwnershipDisplay" in body
+    assert "ownerSpecificText" in body

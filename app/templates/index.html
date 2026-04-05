@@ -42,6 +42,34 @@
 
           <div class="field-grid">
             <label class="field">
+              <span data-i18n="field.user_display_name">User name</span>
+              <input
+                id="user-display-name"
+                name="user_display_name"
+                type="text"
+                maxlength="40"
+                data-i18n-placeholder="placeholder.user_display_name"
+                placeholder="Your name"
+                value="{{ defaults.user_display_name if defaults.user_display_name is defined else '' }}"
+              >
+            </label>
+
+            <label class="field">
+              <span data-i18n="field.spouse_display_name">Spouse name</span>
+              <input
+                id="spouse-display-name"
+                name="spouse_display_name"
+                type="text"
+                maxlength="40"
+                data-i18n-placeholder="placeholder.spouse_display_name"
+                placeholder="Spouse name"
+                value="{{ defaults.spouse_display_name if defaults.spouse_display_name is defined else '' }}"
+              >
+            </label>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
               <span data-i18n="field.planning_year">Planning year</span>
               <select name="year" id="year">
                 {% for year in supported_years %}
@@ -51,12 +79,12 @@
             </label>
 
             <label class="field">
-              <span data-i18n="field.target_user_net_income">Desired user net income after tax</span>
+              <span id="target-net-income-label" data-i18n="field.target_user_net_income">Desired user net income after tax</span>
               <input name="target_user_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.target_user_net_income }}">
             </label>
 
             <label class="field">
-              <span data-i18n="field.spouse_external_salary">Spouse salary from other employer</span>
+              <span id="spouse-external-salary-label" data-i18n="field.spouse_external_salary">Spouse salary from other employer</span>
               <input name="spouse_external_salary" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.spouse_external_salary }}">
             </label>
 
@@ -103,32 +131,6 @@
               <p data-i18n="shareholder.subtitle">Saved dividend room and cost basis are entered separately for each owner.</p>
             </div>
             <div class="field-grid">
-              <label class="field">
-                <span data-i18n="field.user_display_name">User name</span>
-                <input
-                  id="user-display-name"
-                  name="user_display_name"
-                  type="text"
-                  maxlength="40"
-                  data-i18n-placeholder="placeholder.user_display_name"
-                  placeholder="Your name"
-                  value="{{ defaults.user_display_name if defaults.user_display_name is defined else '' }}"
-                >
-              </label>
-
-              <label class="field">
-                <span data-i18n="field.spouse_display_name">Spouse name</span>
-                <input
-                  id="spouse-display-name"
-                  name="spouse_display_name"
-                  type="text"
-                  maxlength="40"
-                  data-i18n-placeholder="placeholder.spouse_display_name"
-                  placeholder="Spouse name"
-                  value="{{ defaults.spouse_display_name if defaults.spouse_display_name is defined else '' }}"
-                >
-              </label>
-
               <div class="field field-span-2 ownership-field">
                 <span data-i18n="field.user_share_percentage">User ownership share</span>
                 <div class="ownership-values">
@@ -154,22 +156,22 @@
               </div>
 
               <label class="field">
-                <span data-i18n="field.saved_dividend_space_user">User saved dividend space</span>
+                <span id="user-saved-dividend-space-label" data-i18n="field.saved_dividend_space_user">User saved dividend space</span>
                 <input name="saved_dividend_space_user" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.saved_dividend_space_user }}">
               </label>
 
               <label class="field">
-                <span data-i18n="field.saved_dividend_space_spouse">Spouse saved dividend space</span>
+                <span id="spouse-saved-dividend-space-label" data-i18n="field.saved_dividend_space_spouse">Spouse saved dividend space</span>
                 <input name="saved_dividend_space_spouse" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.saved_dividend_space_spouse }}">
               </label>
 
               <label class="field">
-                <span data-i18n="field.user_share_cost_basis">User share cost basis</span>
+                <span id="user-share-cost-basis-label" data-i18n="field.user_share_cost_basis">User share cost basis</span>
                 <input name="user_share_cost_basis" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.user_share_cost_basis }}">
               </label>
 
               <label class="field">
-                <span data-i18n="field.spouse_share_cost_basis">Spouse share cost basis</span>
+                <span id="spouse-share-cost-basis-label" data-i18n="field.spouse_share_cost_basis">Spouse share cost basis</span>
                 <input name="spouse_share_cost_basis" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.spouse_share_cost_basis }}">
               </label>
             </div>
