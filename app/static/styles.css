@@ -161,7 +161,7 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   position: relative;
 }
 
@@ -174,9 +174,9 @@ body {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.2;
-  min-height: 2.5em;
+  min-height: 3em;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .field small {
@@ -475,6 +475,71 @@ button[type="submit"] {
   background: rgba(29, 122, 99, 0.12);
 }
 
+.mix-note {
+  display: grid;
+  gap: 12px;
+}
+
+.mix-summary {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.mix-stat-grid,
+.mix-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mix-stat,
+.mix-comparison-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(29, 122, 99, 0.05);
+}
+
+.mix-stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-bottom: 6px;
+}
+
+.mix-stat strong {
+  font-size: 1.15rem;
+}
+
+.mix-reasons {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.mix-reasons div::before {
+  content: "•";
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.mix-comparison-card h4,
+.mix-comparison-card p {
+  margin: 0;
+}
+
+.mix-comparison-card h4 {
+  margin-bottom: 10px;
+  font-size: 0.96rem;
+}
+
+.mix-comparison-card p {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .ownership-chip {
   flex: 0 0 auto;
   min-width: 56px;
@@ -611,7 +676,9 @@ button[type="submit"] {
   }
 
   .field-grid,
-  .metric-grid {
+  .metric-grid,
+  .mix-stat-grid,
+  .mix-comparison-grid {
     grid-template-columns: 1fr;
   }
 

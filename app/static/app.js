@@ -15,6 +15,7 @@ const submitButton = form.querySelector('button[type="submit"]');
 const metaDescription = document.querySelector("#meta-description");
 const pageTitle = document.querySelector("#page-title");
 const appNameElement = document.querySelector("#app-name");
+const compensationMixBox = document.querySelector("#compensation-mix-analysis");
 const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
 const userDisplayNameInput = document.querySelector("#user-display-name");
 const spouseDisplayNameInput = document.querySelector("#spouse-display-name");
@@ -185,6 +186,23 @@ const TRANSLATIONS = {
     "ownership.loading": "Analyserar om en annan ägarfördelning kan ge lägre total skatt.",
     "ownership.loading_title": "Ägarfördelningsanalys pågår",
     "ownership.loading_detail": "Rekommendationen visas redan. Nu jämför appen flera ägarfördelningar i bakgrunden.",
+    "mix.title": "Löne- och utdelningsanalys",
+    "mix.share_salary": "Andel som lön",
+    "mix.share_dividend": "Andel som utdelning",
+    "mix.summary_salary_only": "Rekommendationen lutar helt mot lön i det här spannet.",
+    "mix.summary_dividend_only": "Rekommendationen lutar helt mot utdelning i det här spannet.",
+    "mix.summary_mixed": "Rekommendationen använder en mix där cirka {salarySharePercentage} % tas som lön och {dividendSharePercentage} % som utdelning.",
+    "mix.reason_target_priority": "Den här mixen valdes först för att komma så nära användarens nettomål som möjligt.",
+    "mix.reason_dividend_room_used": "Utdelning används eftersom det finns kvalificerat utdelningsutrymme att nyttja.",
+    "mix.reason_salary_dominant": "Modellen hittar ingen utdelning som förbättrar utfallet jämfört med ren lön i det här läget.",
+    "mix.reason_near_state_breakpoint": "Lönen ligger nära brytpunkten för statlig skatt, vilket ofta är ett känsligt område i planeringen.",
+    "mix.reason_above_state_breakpoint": "Lönen ligger tydligt över brytpunkten för statlig skatt, vilket betyder att högre lön redan ger statlig skatt.",
+    "mix.comparison_more_dividend": "Jämförelse: mer utdelning och lägre lön",
+    "mix.comparison_more_salary": "Jämförelse: mer lön och mindre utdelning",
+    "mix.comparison_tax_higher": "Total skatt blir {amount} högre.",
+    "mix.comparison_tax_lower": "Total skatt blir {amount} lägre.",
+    "mix.comparison_net_higher": "Användarens netto blir {amount} högre.",
+    "mix.comparison_net_lower": "Användarens netto blir {amount} lägre.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "error.export_failed": "PDF-exporten misslyckades.",
     "status.calculating": "Beräknar rekommendation...",
@@ -358,6 +376,23 @@ const TRANSLATIONS = {
     "ownership.loading": "Analyzing whether a different ownership split can reduce total tax.",
     "ownership.loading_title": "Ownership analysis in progress",
     "ownership.loading_detail": "The recommendation is already shown. The app is now comparing multiple ownership splits in the background.",
+    "mix.title": "Salary vs dividend analysis",
+    "mix.share_salary": "Share taken as salary",
+    "mix.share_dividend": "Share taken as dividend",
+    "mix.summary_salary_only": "The recommendation leans entirely toward salary in this range.",
+    "mix.summary_dividend_only": "The recommendation leans entirely toward dividends in this range.",
+    "mix.summary_mixed": "The recommendation uses a mix where about {salarySharePercentage}% is taken as salary and {dividendSharePercentage}% as dividends.",
+    "mix.reason_target_priority": "This mix was selected first to stay as close as possible to the user's net-income target.",
+    "mix.reason_dividend_room_used": "Dividends are used because qualified dividend room is available.",
+    "mix.reason_salary_dominant": "The model does not find any dividend usage that improves the result compared with salary only in this case.",
+    "mix.reason_near_state_breakpoint": "Salary is close to the state-tax breakpoint, which is often a sensitive planning zone.",
+    "mix.reason_above_state_breakpoint": "Salary is clearly above the state-tax breakpoint, so extra salary already triggers state tax.",
+    "mix.comparison_more_dividend": "Comparison: more dividend and lower salary",
+    "mix.comparison_more_salary": "Comparison: more salary and less dividend",
+    "mix.comparison_tax_higher": "Total tax becomes {amount} higher.",
+    "mix.comparison_tax_lower": "Total tax becomes {amount} lower.",
+    "mix.comparison_net_higher": "The user's net income becomes {amount} higher.",
+    "mix.comparison_net_lower": "The user's net income becomes {amount} lower.",
     "error.calculation_failed": "Calculation failed.",
     "error.export_failed": "PDF export failed.",
     "status.calculating": "Calculating recommendation...",
@@ -922,6 +957,23 @@ function translateRule(label) {
   return label;
 }
 
+function localizeTranslationParams(params = {}) {
+  return Object.fromEntries(
+    Object.entries(params).map(([key, value]) => {
+      if (typeof value !== "number") {
+        return [key, value];
+      }
+      if (/Percentage$/i.test(key)) {
+        return [key, formatInputValue(value, "percent")];
+      }
+      if (["salaryRequirement", "wageDeduction"].includes(key)) {
+        return [key, formatInputValue(value, "amount")];
+      }
+      return [key, value];
+    }),
+  );
+}
+
 function translateMessage(item) {
   if (typeof item === "string") {
     return item;
@@ -929,7 +981,7 @@ function translateMessage(item) {
   const params = {
     userName: getOwnerName("user"),
     spouseName: getOwnerName("spouse"),
-    ...(item.params || {}),
+    ...localizeTranslationParams(item.params || {}),
   };
   return t(item.key, params);
 }
@@ -944,6 +996,62 @@ function renderMetrics(result) {
     ${metric(t("metric.household_net"), formatCurrency(recommendation.household_net_from_company), t("metric.household_net_sub"))}
     ${metric(t("metric.distance_to_target"), formatCurrency(recommendation.distance_to_target), recommendation.shortfall_to_target > 0 ? t("metric.distance_target_shortfall") : t("metric.distance_target_reached"))}
     ${metric(t("metric.total_tax_burden"), formatCurrency(recommendation.total_tax_burden), t("metric.total_tax_burden_sub"))}
+  `;
+}
+
+function comparisonDeltaText(type, amount) {
+  if (Math.abs(amount) < 1) {
+    amount = 0;
+  }
+  const value = formatCurrency(Math.abs(amount));
+  const direction = amount <= 0 ? "lower" : "higher";
+  return t(`mix.comparison_${type}_${direction}`, { amount: value });
+}
+
+function renderCompensationMixAnalysis(result) {
+  const mix = result.compensation_mix;
+  if (!mix) {
+    compensationMixBox.innerHTML = "";
+    return;
+  }
+
+  const comparisons = (mix.comparisons || [])
+    .map((entry) => {
+      const scenario = entry.scenario;
+      return `
+        <article class="mix-comparison-card">
+          <h4>${t(entry.key)}</h4>
+          <div class="kv">
+            <div>${t("scenario.salary")}</div><div>${formatCurrency(scenario.salary)}</div>
+            <div>${t("scenario.total_dividend")}</div><div>${formatCurrency(scenario.total_dividend)}</div>
+            <div>${ownerSpecificText("scenario_net", "user")}</div><div>${formatCurrency(scenario.user_net_from_company)}</div>
+            <div>${t("scenario.total_tax_burden")}</div><div>${formatCurrency(scenario.total_tax_burden)}</div>
+          </div>
+          <p>${comparisonDeltaText("tax", entry.tax_delta)} ${comparisonDeltaText("net", entry.net_delta)}</p>
+        </article>
+      `;
+    })
+    .join("");
+
+  compensationMixBox.innerHTML = `
+    <div class="note mix-note">
+      <strong>${t("mix.title")}</strong>
+      <p class="mix-summary">${translateMessage(mix.summary)}</p>
+      <div class="mix-stat-grid">
+        <div class="mix-stat">
+          <span>${t("mix.share_salary")}</span>
+          <strong>${formatInputValue(mix.salary_share_percentage, "percent")} %</strong>
+        </div>
+        <div class="mix-stat">
+          <span>${t("mix.share_dividend")}</span>
+          <strong>${formatInputValue(mix.dividend_share_percentage, "percent")} %</strong>
+        </div>
+      </div>
+      <div class="mix-reasons">
+        ${(mix.reasons || []).map((item) => `<div>${translateMessage(item)}</div>`).join("")}
+      </div>
+      ${comparisons ? `<div class="mix-comparison-grid">${comparisons}</div>` : ""}
+    </div>
   `;
 }
 
@@ -1109,6 +1217,7 @@ function clearError() {
 function setLoadingState() {
   summaryBox.classList.add("empty-state");
   summaryBox.innerHTML = `<span>${t("status.calculating")}</span>`;
+  compensationMixBox.innerHTML = "";
   ownershipSuggestionBox.innerHTML = `
     <div class="note ownership-loading">
       <div class="loading-header">
@@ -1201,6 +1310,7 @@ async function submitForm() {
   const result = await response.json();
   lastResult = result;
   renderMetrics(result);
+  renderCompensationMixAnalysis(result);
   renderBreakdown(result);
   renderAlternatives(result);
   renderAssumptions(result);
@@ -1310,6 +1420,7 @@ languageSwitch.addEventListener("change", (event) => {
   setFieldLabels(yearInput.value);
   if (lastResult) {
     renderMetrics(lastResult);
+    renderCompensationMixAnalysis(lastResult);
     renderOwnershipSuggestion(lastResult);
     renderBreakdown(lastResult);
     renderAlternatives(lastResult);

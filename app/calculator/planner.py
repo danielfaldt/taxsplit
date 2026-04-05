@@ -494,6 +494,95 @@ def build_alternative_scenarios(data: PlanningInput, evaluated: list[dict[str, A
     return unique_labels
 
 
+def build_compensation_mix_analysis(
+    data: PlanningInput,
+    recommended: dict[str, Any],
+    evaluated: list[dict[str, Any]],
+) -> dict[str, Any]:
+    total_compensation = recommended["salary"] + recommended["total_dividend"]
+    salary_share_percentage = (recommended["salary"] / total_compensation * 100.0) if total_compensation > 0 else 0.0
+    dividend_share_percentage = (recommended["total_dividend"] / total_compensation * 100.0) if total_compensation > 0 else 0.0
+    total_dividend_room = (
+        recommended["dividend_spaces"]["user_space"] + recommended["dividend_spaces"]["spouse_space"]
+    )
+    state_threshold_gross = max(
+        SALARY_RULES[data.year].state_tax_threshold_taxable + 17_400 - data.user_other_service_income - data.user_car_benefit,
+        0.0,
+    )
+
+    if recommended["salary"] <= 1 and recommended["total_dividend"] > 1:
+        summary = {"key": "mix.summary_dividend_only", "params": {}}
+    elif recommended["total_dividend"] <= 1:
+        summary = {"key": "mix.summary_salary_only", "params": {}}
+    else:
+        summary = {
+            "key": "mix.summary_mixed",
+            "params": {
+                "salarySharePercentage": round(salary_share_percentage, 1),
+                "dividendSharePercentage": round(dividend_share_percentage, 1),
+            },
+        }
+
+    reasons: list[dict[str, Any]] = [{"key": "mix.reason_target_priority", "params": {}}]
+    if recommended["total_dividend"] > 1 and total_dividend_room > 1:
+        reasons.append({"key": "mix.reason_dividend_room_used", "params": {}})
+    elif recommended["total_dividend"] <= 1:
+        reasons.append({"key": "mix.reason_salary_dominant", "params": {}})
+
+    if abs(recommended["salary"] - state_threshold_gross) <= 20_000:
+        reasons.append({"key": "mix.reason_near_state_breakpoint", "params": {}})
+    elif recommended["salary"] > state_threshold_gross + 20_000:
+        reasons.append({"key": "mix.reason_above_state_breakpoint", "params": {}})
+
+    lower_salary_candidates = [item for item in evaluated if item["salary"] < recommended["salary"]]
+    higher_salary_candidates = [item for item in evaluated if item["salary"] > recommended["salary"]]
+
+    comparisons: list[dict[str, Any]] = []
+    if lower_salary_candidates:
+        lower_salary = min(
+            lower_salary_candidates,
+            key=lambda item: (
+                abs(item["salary"] - recommended["salary"]),
+                item["distance_to_target"],
+                item["total_tax_burden"],
+            ),
+        )
+        comparisons.append(
+            {
+                "key": "mix.comparison_more_dividend",
+                "scenario": lower_salary,
+                "tax_delta": round(lower_salary["total_tax_burden"] - recommended["total_tax_burden"], 2),
+                "net_delta": round(lower_salary["user_net_from_company"] - recommended["user_net_from_company"], 2),
+            }
+        )
+
+    if higher_salary_candidates:
+        higher_salary = min(
+            higher_salary_candidates,
+            key=lambda item: (
+                abs(item["salary"] - recommended["salary"]),
+                item["distance_to_target"],
+                item["total_tax_burden"],
+            ),
+        )
+        comparisons.append(
+            {
+                "key": "mix.comparison_more_salary",
+                "scenario": higher_salary,
+                "tax_delta": round(higher_salary["total_tax_burden"] - recommended["total_tax_burden"], 2),
+                "net_delta": round(higher_salary["user_net_from_company"] - recommended["user_net_from_company"], 2),
+            }
+        )
+
+    return {
+        "salary_share_percentage": round(salary_share_percentage, 1),
+        "dividend_share_percentage": round(dividend_share_percentage, 1),
+        "summary": summary,
+        "reasons": reasons,
+        "comparisons": comparisons,
+    }
+
+
 def build_split_variant(data: PlanningInput, user_share_percentage: float) -> PlanningInput:
     user_fraction = user_share_percentage / 100.0
     spouse_fraction = 1.0 - user_fraction
@@ -543,7 +632,8 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
         ),
     )
     alternatives = build_alternative_scenarios(data, evaluated)
-    return {"recommended": recommended, "alternatives": alternatives}
+    compensation_mix = build_compensation_mix_analysis(data, recommended, evaluated)
+    return {"recommended": recommended, "alternatives": alternatives, "compensation_mix": compensation_mix}
 
 
 def suggest_ownership_split(data: PlanningInput) -> dict[str, Any] | None:
@@ -613,6 +703,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
     planned = plan_core(data)
     recommended = planned["recommended"]
     alternatives = planned["alternatives"]
+    compensation_mix = planned["compensation_mix"]
     salary_basis_year = DIVIDEND_RULES[data.year].salary_basis_year
     ownership_suggestion = suggest_ownership_split(data) if include_ownership_analysis else None
 
@@ -625,6 +716,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
         },
         "recommended": recommended,
         "alternatives": alternatives,
+        "compensation_mix": compensation_mix,
         "ownership_suggestion": ownership_suggestion,
         "assumptions": [
             {

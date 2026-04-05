@@ -13,6 +13,7 @@ def test_index_renders():
     assert 'id="language-switch"' in response.text
     assert 'id="export-pdf"' in response.text
     assert 'data-i18n="button.export_pdf"' in response.text
+    assert 'id="compensation-mix-analysis"' in response.text
     assert 'id="user-share-slider"' in response.text
     assert 'name="user_display_name"' in response.text
     assert 'name="spouse_display_name"' in response.text
@@ -39,6 +40,8 @@ def test_api_calculate_returns_json():
     assert response.status_code == 200
     payload = response.json()
     assert payload["recommended"]["salary"] >= 0
+    assert "compensation_mix" in payload
+    assert "summary" in payload["compensation_mix"]
     assert payload["ownership_suggestion"] is None
 
 
@@ -94,6 +97,10 @@ def test_client_script_persists_form_state_on_input():
     assert "ownership-loading" in body
     assert "ownership.input_label" in body
     assert "ownership.proposal_label" in body
+    assert "renderCompensationMixAnalysis" in body
+    assert "mix.title" in body
+    assert "mix.summary_mixed" in body
+    assert "mix.comparison_more_salary" in body
     assert "ownership-comparison-row" in body
     assert "/api/municipal-tax/" in body
     assert "tax-municipality" in body

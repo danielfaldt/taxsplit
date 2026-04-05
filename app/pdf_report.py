@@ -21,10 +21,11 @@ COPY: dict[str, dict[str, str]] = {
         "generated": "Genererad",
         "section_inputs": "1. Indata",
         "section_recommendation": "2. Rekommenderad plan",
-        "section_breakdown": "3. Nedbrytning av beräkning",
-        "section_ownership": "4. Ägarfördelningsanalys",
-        "section_alternatives": "5. Alternativa scenarier",
-        "section_notes": "6. Antaganden och förklaringar",
+        "section_mix": "3. Lön kontra utdelning",
+        "section_breakdown": "4. Nedbrytning av beräkning",
+        "section_ownership": "5. Ägarfördelningsanalys",
+        "section_alternatives": "6. Alternativa scenarier",
+        "section_notes": "7. Antaganden och förklaringar",
         "label_user_name": "Användare",
         "label_spouse_name": "Make/maka",
         "label_year": "Planeringsår",
@@ -57,6 +58,10 @@ COPY: dict[str, dict[str, str]] = {
         "label_household_net": "Hushållets netto från bolaget",
         "label_distance": "Avstånd till mål",
         "label_tax_burden": "Total skattebelastning",
+        "label_salary_share": "Andel som lön",
+        "label_dividend_share": "Andel som utdelning",
+        "label_mix_assessment": "Bedömning",
+        "label_mix_comparison": "Jämförelsepunkt",
         "label_company_budget": "Bolagsbudget",
         "label_salary_tax": "Löneskatt",
         "label_dividend_room": "Utdelningsutrymme",
@@ -76,10 +81,11 @@ COPY: dict[str, dict[str, str]] = {
         "generated": "Generated",
         "section_inputs": "1. Inputs",
         "section_recommendation": "2. Recommended plan",
-        "section_breakdown": "3. Calculation breakdown",
-        "section_ownership": "4. Ownership analysis",
-        "section_alternatives": "5. Alternative scenarios",
-        "section_notes": "6. Assumptions and explanations",
+        "section_mix": "3. Salary versus dividend",
+        "section_breakdown": "4. Calculation breakdown",
+        "section_ownership": "5. Ownership analysis",
+        "section_alternatives": "6. Alternative scenarios",
+        "section_notes": "7. Assumptions and explanations",
         "label_user_name": "User",
         "label_spouse_name": "Spouse",
         "label_year": "Planning year",
@@ -112,6 +118,10 @@ COPY: dict[str, dict[str, str]] = {
         "label_household_net": "Household net from company",
         "label_distance": "Distance to target",
         "label_tax_burden": "Total tax burden",
+        "label_salary_share": "Share taken as salary",
+        "label_dividend_share": "Share taken as dividend",
+        "label_mix_assessment": "Assessment",
+        "label_mix_comparison": "Comparison point",
         "label_company_budget": "Company budget",
         "label_salary_tax": "Salary tax",
         "label_dividend_room": "Dividend room",
@@ -154,6 +164,16 @@ MESSAGE_COPY: dict[str, dict[str, str]] = {
         "assumption.car_benefit_cash_vs_tax": "Bilförmån behandlas som skattepliktig förmån men räknas inte som kontant nettolön mot målet.",
         "assumption.pension_limit": "Tjänstepensionen kontrolleras mot avdragsramen i modellen.",
         "assumption.periodization_fund": "Positiv periodiseringsfond minskar årets beskattningsbara resultat och negativt värde tolkas som återföring.",
+        "mix.summary_salary_only": "Rekommendationen lutar helt mot lön i det här spannet.",
+        "mix.summary_dividend_only": "Rekommendationen lutar helt mot utdelning i det här spannet.",
+        "mix.summary_mixed": "Rekommendationen använder en mix där cirka {salarySharePercentage} % tas som lön och {dividendSharePercentage} % som utdelning.",
+        "mix.reason_target_priority": "Den här mixen valdes först för att komma så nära användarens nettomål som möjligt.",
+        "mix.reason_dividend_room_used": "Utdelning används eftersom det finns kvalificerat utdelningsutrymme att nyttja.",
+        "mix.reason_salary_dominant": "Modellen hittar ingen utdelning som förbättrar utfallet jämfört med ren lön i det här läget.",
+        "mix.reason_near_state_breakpoint": "Lönen ligger nära brytpunkten för statlig skatt, vilket ofta är ett känsligt område i planeringen.",
+        "mix.reason_above_state_breakpoint": "Lönen ligger tydligt över brytpunkten för statlig skatt, vilket betyder att högre lön redan ger statlig skatt.",
+        "mix.comparison_more_dividend": "Mer utdelning och lägre lön",
+        "mix.comparison_more_salary": "Mer lön och mindre utdelning",
     },
     "en": {
         "alternative.Dividend-led": "Dividend-led scenario",
@@ -181,6 +201,16 @@ MESSAGE_COPY: dict[str, dict[str, str]] = {
         "assumption.car_benefit_cash_vs_tax": "Car benefit is treated as taxable compensation but is not counted as cash net salary toward the target.",
         "assumption.pension_limit": "Occupational pension is checked against the model's deduction envelope.",
         "assumption.periodization_fund": "A positive periodization-fund amount reduces current taxable profit and a negative amount is treated as reversal.",
+        "mix.summary_salary_only": "The recommendation leans entirely toward salary in this range.",
+        "mix.summary_dividend_only": "The recommendation leans entirely toward dividends in this range.",
+        "mix.summary_mixed": "The recommendation uses a mix where about {salarySharePercentage}% is taken as salary and {dividendSharePercentage}% as dividends.",
+        "mix.reason_target_priority": "This mix was selected first to stay as close as possible to the user's net-income target.",
+        "mix.reason_dividend_room_used": "Dividends are used because qualified dividend room is available.",
+        "mix.reason_salary_dominant": "The model does not find any dividend usage that improves the result compared with salary only in this case.",
+        "mix.reason_near_state_breakpoint": "Salary is close to the state-tax breakpoint, which is often a sensitive planning zone.",
+        "mix.reason_above_state_breakpoint": "Salary is clearly above the state-tax breakpoint, so extra salary already triggers state tax.",
+        "mix.comparison_more_dividend": "More dividend and lower salary",
+        "mix.comparison_more_salary": "More salary and less dividend",
     },
 }
 
@@ -215,9 +245,23 @@ def interpolate(template: str, params: dict[str, Any]) -> str:
     return result
 
 
+def localize_message_params(params: dict[str, Any], language: str) -> dict[str, Any]:
+    localized: dict[str, Any] = {}
+    for key, value in params.items():
+        if isinstance(value, (int, float)):
+            if key.endswith("Percentage"):
+                localized[key] = percentage(float(value), language).replace(f" {COPY[language]['percent_suffix']}", "")
+                continue
+            if key in {"salaryRequirement", "wageDeduction"}:
+                localized[key] = money(float(value), language).replace(f" {COPY[language]['currency_suffix']}", "")
+                continue
+        localized[key] = value
+    return localized
+
+
 def translate_message(item: dict[str, Any], language: str, user_name: str, spouse_name: str) -> str:
     template = MESSAGE_COPY[language].get(item["key"], item["key"])
-    params = {"userName": user_name, "spouseName": spouse_name, **item.get("params", {})}
+    params = {"userName": user_name, "spouseName": spouse_name, **localize_message_params(item.get("params", {}), language)}
     return interpolate(template, params)
 
 
@@ -300,6 +344,7 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
     user_dividend = recommended["user_dividend"]
     spouse_dividend = recommended["spouse_dividend"]
     ownership = result["ownership_suggestion"]
+    mix = result["compensation_mix"]
     user_name = owner_name(input_data["user_display_name"], copy["label_user_name"])
     spouse_name = owner_name(input_data["spouse_display_name"], copy["label_spouse_name"])
     spouse_share_percentage = round(100.0 - float(input_data["user_share_percentage"]), 1)
@@ -368,6 +413,15 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
             ],
             styles,
         ),
+        paragraph(copy["section_mix"], styles["section"]),
+        rows_to_table(
+            [
+                (copy["label_salary_share"], percentage(mix["salary_share_percentage"], language)),
+                (copy["label_dividend_share"], percentage(mix["dividend_share_percentage"], language)),
+                (copy["label_mix_assessment"], translate_message(mix["summary"], language, user_name, spouse_name)),
+            ],
+            styles,
+        ),
         paragraph(copy["section_breakdown"], styles["section"]),
         rows_to_table(
             [
@@ -413,6 +467,21 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
         )
     else:
         story.append(paragraph(copy["label_none"], styles["body"]))
+
+    for note in mix["reasons"]:
+        story.append(paragraph(f"- {translate_message(note, language, user_name, spouse_name)}", styles["body"]))
+
+    for comparison in mix["comparisons"]:
+        story.append(
+            paragraph(
+                f"- {copy['label_mix_comparison']}: {translate_message({'key': comparison['key'], 'params': {}}, language, user_name, spouse_name)}. "
+                f"Salary {money(comparison['scenario']['salary'], language)}, "
+                f"dividend {money(comparison['scenario']['total_dividend'], language)}, "
+                f"user net {money(comparison['scenario']['user_net_from_company'], language)}, "
+                f"tax {money(comparison['scenario']['total_tax_burden'], language)}.",
+                styles["body"],
+            )
+        )
 
     story.extend(
         [
