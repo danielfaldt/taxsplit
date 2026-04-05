@@ -1,6 +1,6 @@
 # Skatteuttag
 
-Skatteuttag is a developer-focused web application for Swedish compensation planning in a private limited company context. It models salary and dividend extraction for a company owned 50/50 by spouses, where only the user receives salary from the company and the spouse has salary income from another employer.
+Skatteuttag is a developer-focused web application for Swedish compensation planning in a private limited company context. It models salary and dividend extraction for a company owned by spouses, where only the user receives salary from the company and the spouse has salary income from another employer.
 
 The app takes one planning year as the controlling input and derives the relevant rule years from that choice. Salary tax is computed for the selected year, while the wage-linked part of the dividend room uses the salary-base year that legally feeds into that planning year.
 
@@ -10,7 +10,9 @@ The primary company input is the company result before corporate tax. The app th
 
 - One-year planning input with explicit salary-base-year mapping
 - Built-in bilingual UI with Swedish and English
+- Locale-friendly number formatting with thousands separators in the browser
 - Salary and dividend recommendation aimed at the user's target annual net income
+- Adjustable ownership split between spouses, plus an indicative ownership suggestion when a different split lowers total tax
 - Side-by-side alternative scenarios
 - Transparent breakdown of company tax, salary tax, dividend tax, and qualified dividend room
 - Browser local storage for form persistence
@@ -62,7 +64,7 @@ docker compose --env-file .env.dev run --rm test
 ## Key modelling assumptions
 
 - The company is a Swedish private limited company.
-- The user and spouse each own 50% of the shares.
+- The user can set the ownership split between spouses.
 - Only the user receives salary from the company.
 - The spouse's external salary only affects the spouse's tax result where dividends spill into service taxation.
 - Dividends are limited to current-year post-corporate-tax profit plus any opening retained earnings entered by the user.

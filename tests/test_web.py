@@ -31,3 +31,5 @@ def test_client_script_persists_form_state_on_input():
     body = response.text
     assert 'form.addEventListener("input", saveStateIfFormField);' in body
     assert 'localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));' in body
+    assert "formatInputValue" in body
+    assert 'name="user_share_percentage"' in client.get("/").text

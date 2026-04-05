@@ -55,28 +55,28 @@
 
             <label class="field">
               <span data-i18n="field.target_user_net_income">Desired user net income after tax</span>
-              <input name="target_user_net_income" type="number" min="0" step="1000" value="{{ defaults.target_user_net_income }}">
+              <input name="target_user_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.target_user_net_income }}">
             </label>
 
             <label class="field">
               <span data-i18n="field.spouse_external_salary">Spouse salary from other employer</span>
-              <input name="spouse_external_salary" type="number" min="0" step="1000" value="{{ defaults.spouse_external_salary }}">
+              <input name="spouse_external_salary" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.spouse_external_salary }}">
             </label>
 
             <label class="field">
               <span data-i18n="field.company_result_before_corporate_tax">Company result before corporate tax</span>
-              <input name="company_result_before_corporate_tax" type="number" min="0" step="1000" value="{{ defaults.company_result_before_corporate_tax }}">
+              <input name="company_result_before_corporate_tax" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.company_result_before_corporate_tax }}">
             </label>
 
             <label class="field">
               <span data-i18n="field.opening_retained_earnings">Opening retained earnings available for dividends</span>
-              <input name="opening_retained_earnings" type="number" min="0" step="1000" value="{{ defaults.opening_retained_earnings }}">
+              <input name="opening_retained_earnings" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.opening_retained_earnings }}">
             </label>
 
             <label class="field">
               <span data-i18n="field.municipal_tax_rate">Municipal tax rate</span>
               <div class="inline-input">
-                <input name="municipal_tax_rate" type="number" min="25" max="40" step="0.01" value="{{ defaults.municipal_tax_rate }}">
+                <input name="municipal_tax_rate" type="text" inputmode="decimal" class="js-number" data-number-kind="percent" value="{{ defaults.municipal_tax_rate }}">
                 <small>%</small>
               </div>
             </label>
@@ -90,12 +90,12 @@
             <div class="field-grid">
               <label class="field">
                 <span id="company-salary-label">Company cash salaries in {{ defaults.year - 1 }}</span>
-                <input name="prior_year_company_cash_salaries" type="number" min="0" step="1000" value="{{ defaults.prior_year_company_cash_salaries }}">
+                <input name="prior_year_company_cash_salaries" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.prior_year_company_cash_salaries }}">
               </label>
 
               <label class="field">
                 <span id="user-salary-label">User salary from the company in {{ defaults.year - 1 }}</span>
-                <input name="prior_year_user_company_salary" type="number" min="0" step="1000" value="{{ defaults.prior_year_user_company_salary }}">
+                <input name="prior_year_user_company_salary" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.prior_year_user_company_salary }}">
               </label>
             </div>
           </div>
@@ -107,23 +107,39 @@
             </div>
             <div class="field-grid">
               <label class="field">
+                <span data-i18n="field.user_share_percentage">User ownership share</span>
+                <div class="inline-input">
+                  <input name="user_share_percentage" type="text" inputmode="decimal" class="js-number" data-number-kind="percent" value="{{ defaults.user_share_percentage }}">
+                  <small>%</small>
+                </div>
+              </label>
+
+              <label class="field">
+                <span data-i18n="field.spouse_share_percentage">Spouse ownership share</span>
+                <div class="inline-input">
+                  <input name="spouse_share_percentage_display" type="text" readonly id="spouse-share-display">
+                  <small>%</small>
+                </div>
+              </label>
+
+              <label class="field">
                 <span data-i18n="field.saved_dividend_space_user">User saved dividend space</span>
-                <input name="saved_dividend_space_user" type="number" min="0" step="1000" value="{{ defaults.saved_dividend_space_user }}">
+                <input name="saved_dividend_space_user" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.saved_dividend_space_user }}">
               </label>
 
               <label class="field">
                 <span data-i18n="field.saved_dividend_space_spouse">Spouse saved dividend space</span>
-                <input name="saved_dividend_space_spouse" type="number" min="0" step="1000" value="{{ defaults.saved_dividend_space_spouse }}">
+                <input name="saved_dividend_space_spouse" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.saved_dividend_space_spouse }}">
               </label>
 
               <label class="field">
                 <span data-i18n="field.user_share_cost_basis">User share cost basis</span>
-                <input name="user_share_cost_basis" type="number" min="0" step="1000" value="{{ defaults.user_share_cost_basis }}">
+                <input name="user_share_cost_basis" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.user_share_cost_basis }}">
               </label>
 
               <label class="field">
                 <span data-i18n="field.spouse_share_cost_basis">Spouse share cost basis</span>
-                <input name="spouse_share_cost_basis" type="number" min="0" step="1000" value="{{ defaults.spouse_share_cost_basis }}">
+                <input name="spouse_share_cost_basis" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.spouse_share_cost_basis }}">
               </label>
             </div>
           </div>
@@ -148,6 +164,7 @@
             <div id="recommendation-summary" class="metric-grid empty-state">
               <span data-i18n="recommended.empty">Submit the form to generate a recommendation.</span>
             </div>
+            <div id="ownership-suggestion" class="note-list"></div>
           </div>
 
           <div class="card">

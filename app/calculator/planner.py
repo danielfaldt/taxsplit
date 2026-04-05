@@ -10,7 +10,6 @@ from .rules import (
     CORPORATE_TAX_RATE,
     DIVIDEND_RULES,
     EMPLOYER_CONTRIBUTION_RATE,
-    OWNER_SHARE,
     QUALIFIED_DIVIDEND_TAX_RATE,
     SALARY_RULES,
     SUPPORTED_YEARS,
@@ -34,6 +33,7 @@ class PlanningInput(BaseModel):
     saved_dividend_space_spouse: float = Field(default=0, ge=0)
     user_share_cost_basis: float = Field(default=25_000, ge=0)
     spouse_share_cost_basis: float = Field(default=25_000, ge=0)
+    user_share_percentage: float = Field(default=50.0, gt=0, lt=100)
     municipal_tax_rate: float = Field(default=32.38, ge=25, le=40)
 
     @field_validator("year")
@@ -42,6 +42,18 @@ class PlanningInput(BaseModel):
         if value not in SUPPORTED_YEARS:
             raise ValueError(f"Unsupported year. Choose one of: {', '.join(str(year) for year in SUPPORTED_YEARS)}.")
         return value
+
+    @property
+    def user_share_fraction(self) -> float:
+        return self.user_share_percentage / 100.0
+
+    @property
+    def spouse_share_percentage(self) -> float:
+        return 100.0 - self.user_share_percentage
+
+    @property
+    def spouse_share_fraction(self) -> float:
+        return self.spouse_share_percentage / 100.0
 
 
 @dataclass(frozen=True)
@@ -58,6 +70,8 @@ class DividendSpaceResult:
 
 def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
     rule = DIVIDEND_RULES[data.year]
+    user_share = data.user_share_fraction
+    spouse_share = data.spouse_share_fraction
     notes: list[dict[str, Any]] = [
         {
             "key": "note.salary_basis_year",
@@ -65,23 +79,28 @@ def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
         },
         {
             "key": "note.ownership_structure",
-            "params": {},
+            "params": {
+                "userSharePercentage": round(data.user_share_percentage, 1),
+                "spouseSharePercentage": round(data.spouse_share_percentage, 1),
+            },
         },
     ]
 
     if data.year == 2025:
         uplift = rule.saved_space_uplift or 1.0
-        simplified_base = (rule.simplification_total or 0.0) * OWNER_SHARE
-        simplified_user = simplified_base + data.saved_dividend_space_user * uplift
-        simplified_spouse = simplified_base + data.saved_dividend_space_spouse * uplift
+        simplified_user = ((rule.simplification_total or 0.0) * user_share) + data.saved_dividend_space_user * uplift
+        simplified_spouse = ((rule.simplification_total or 0.0) * spouse_share) + data.saved_dividend_space_spouse * uplift
 
         salary_requirement = min(
             rule.old_salary_requirement_cap or 0.0,
             (rule.old_salary_requirement_base_low or 0.0) + (0.05 * data.prior_year_company_cash_salaries),
         )
-        main_wage_space = 0.0
+        main_user_wage_space = 0.0
+        main_spouse_wage_space = 0.0
         if data.prior_year_user_company_salary >= salary_requirement:
-            main_wage_space = 0.5 * data.prior_year_company_cash_salaries * OWNER_SHARE
+            total_main_wage_space = 0.5 * data.prior_year_company_cash_salaries
+            main_user_wage_space = total_main_wage_space * user_share
+            main_spouse_wage_space = total_main_wage_space * spouse_share
             notes.append(
                 {
                     "key": "note.old_rule_salary_requirement_met",
@@ -99,12 +118,12 @@ def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
         main_user = (
             data.saved_dividend_space_user * uplift
             + (data.user_share_cost_basis * (rule.old_interest_rate or 0.0))
-            + main_wage_space
+            + main_user_wage_space
         )
         main_spouse = (
             data.saved_dividend_space_spouse * uplift
             + (data.spouse_share_cost_basis * (rule.old_interest_rate or 0.0))
-            + main_wage_space
+            + main_spouse_wage_space
         )
 
         if main_user >= simplified_user:
@@ -130,17 +149,17 @@ def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
             notes=notes,
         )
 
-    base_per_owner = (rule.new_ground_amount_total or 0.0) * OWNER_SHARE
+    user_base_amount = (rule.new_ground_amount_total or 0.0) * user_share
+    spouse_base_amount = (rule.new_ground_amount_total or 0.0) * spouse_share
     total_joint_wage_space = max((data.prior_year_company_cash_salaries - (rule.new_wage_deduction_total or 0.0)) * 0.5, 0.0)
-    wage_space_per_owner = total_joint_wage_space * OWNER_SHARE
-    per_owner_cap = data.prior_year_user_company_salary * 50
-    wage_space_per_owner = min(wage_space_per_owner, per_owner_cap)
+    user_wage_space = min(total_joint_wage_space * user_share, data.prior_year_user_company_salary * 50)
+    spouse_wage_space = min(total_joint_wage_space * spouse_share, data.prior_year_user_company_salary * 50)
 
     user_interest = max(data.user_share_cost_basis - 100_000, 0.0) * (rule.new_interest_rate or 0.0)
     spouse_interest = max(data.spouse_share_cost_basis - 100_000, 0.0) * (rule.new_interest_rate or 0.0)
 
     notes.append({"key": "note.new_rule_combined_method", "params": {}})
-    if wage_space_per_owner > 0:
+    if total_joint_wage_space > 0:
         notes.append(
             {
                 "key": "note.new_rule_wage_space_positive",
@@ -156,8 +175,8 @@ def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
         )
 
     return DividendSpaceResult(
-        user_space=round(base_per_owner + wage_space_per_owner + user_interest + data.saved_dividend_space_user, 2),
-        spouse_space=round(base_per_owner + wage_space_per_owner + spouse_interest + data.saved_dividend_space_spouse, 2),
+        user_space=round(user_base_amount + user_wage_space + user_interest + data.saved_dividend_space_user, 2),
+        spouse_space=round(spouse_base_amount + spouse_wage_space + spouse_interest + data.saved_dividend_space_spouse, 2),
         user_rule_label="2026 combined rule",
         spouse_rule_label="2026 combined rule",
         notes=notes,
@@ -247,8 +266,8 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
         municipal_rate=data.municipal_tax_rate,
     )
 
-    user_dividend = total_dividend * OWNER_SHARE
-    spouse_dividend = total_dividend * OWNER_SHARE
+    user_dividend = total_dividend * data.user_share_fraction
+    spouse_dividend = total_dividend * data.spouse_share_fraction
 
     user_dividend_result = compute_dividend_outcome(
         owner_dividend=user_dividend,
@@ -281,6 +300,8 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
     return {
         "salary": round(planned_salary, 2),
         "total_dividend": round(total_dividend, 2),
+        "user_share_percentage": round(data.user_share_percentage, 1),
+        "spouse_share_percentage": round(data.spouse_share_percentage, 1),
         "user_net_from_company": round(user_net_from_company, 2),
         "household_net_from_company": round(household_net_from_company, 2),
         "distance_to_target": round(abs(user_net_from_company - data.target_user_net_income), 2),
@@ -387,8 +408,24 @@ def build_alternative_scenarios(data: PlanningInput, evaluated: list[dict[str, A
     return unique_labels
 
 
-def plan_compensation(payload: dict[str, Any]) -> dict[str, Any]:
-    data = PlanningInput.model_validate(payload)
+def build_split_variant(data: PlanningInput, user_share_percentage: float) -> PlanningInput:
+    user_fraction = user_share_percentage / 100.0
+    spouse_fraction = 1.0 - user_fraction
+    total_saved_space = data.saved_dividend_space_user + data.saved_dividend_space_spouse
+    total_cost_basis = data.user_share_cost_basis + data.spouse_share_cost_basis
+
+    return data.model_copy(
+        update={
+            "user_share_percentage": round(user_share_percentage, 1),
+            "saved_dividend_space_user": round(total_saved_space * user_fraction, 2),
+            "saved_dividend_space_spouse": round(total_saved_space * spouse_fraction, 2),
+            "user_share_cost_basis": round(total_cost_basis * user_fraction, 2),
+            "spouse_share_cost_basis": round(total_cost_basis * spouse_fraction, 2),
+        }
+    )
+
+
+def plan_core(data: PlanningInput) -> dict[str, Any]:
     max_salary = data.company_result_before_corporate_tax / (1 + EMPLOYER_CONTRIBUTION_RATE)
     step = 5_000 if max_salary > 300_000 else 2_500
     evaluated: list[dict[str, Any]] = []
@@ -414,7 +451,73 @@ def plan_compensation(payload: dict[str, Any]) -> dict[str, Any]:
         ),
     )
     alternatives = build_alternative_scenarios(data, evaluated)
+    return {"recommended": recommended, "alternatives": alternatives}
+
+
+def suggest_ownership_split(data: PlanningInput) -> dict[str, Any] | None:
+    current_result = plan_core(data)["recommended"]
+    candidates: list[tuple[float, dict[str, Any]]] = []
+
+    coarse_percentages = set(range(5, 100, 5))
+    coarse_percentages.add(int(round(data.user_share_percentage)))
+
+    for percentage in sorted(coarse_percentages):
+        variant = build_split_variant(data, float(percentage))
+        candidates.append((float(percentage), plan_core(variant)["recommended"]))
+
+    coarse_best_percentage, _ = min(
+        candidates,
+        key=lambda item: (
+            item[1]["total_tax_burden"],
+            item[1]["distance_to_target"],
+        ),
+    )
+
+    fine_start = max(5, int(round(coarse_best_percentage)) - 4)
+    fine_end = min(95, int(round(coarse_best_percentage)) + 4)
+    evaluated_percentages = {int(percentage) for percentage, _ in candidates}
+
+    for percentage in range(fine_start, fine_end + 1):
+        if percentage in evaluated_percentages:
+            continue
+        variant = build_split_variant(data, float(percentage))
+        candidates.append((float(percentage), plan_core(variant)["recommended"]))
+
+    best_percentage, best_result = min(
+        candidates,
+        key=lambda item: (
+            item[1]["total_tax_burden"],
+            item[1]["distance_to_target"],
+        ),
+    )
+
+    tax_saving = round(current_result["total_tax_burden"] - best_result["total_tax_burden"], 2)
+    if (
+        best_percentage == round(data.user_share_percentage, 1)
+        or tax_saving <= 0
+        or best_result["distance_to_target"] > current_result["distance_to_target"]
+    ):
+        return None
+
+    return {
+        "current_user_share_percentage": round(data.user_share_percentage, 1),
+        "current_spouse_share_percentage": round(data.spouse_share_percentage, 1),
+        "suggested_user_share_percentage": round(best_percentage, 1),
+        "suggested_spouse_share_percentage": round(100 - best_percentage, 1),
+        "estimated_tax_saving": tax_saving,
+        "current_total_tax_burden": current_result["total_tax_burden"],
+        "suggested_total_tax_burden": best_result["total_tax_burden"],
+        "note": {"key": "note.ownership_suggestion_scope", "params": {}},
+    }
+
+
+def plan_compensation(payload: dict[str, Any]) -> dict[str, Any]:
+    data = PlanningInput.model_validate(payload)
+    planned = plan_core(data)
+    recommended = planned["recommended"]
+    alternatives = planned["alternatives"]
     salary_basis_year = DIVIDEND_RULES[data.year].salary_basis_year
+    ownership_suggestion = suggest_ownership_split(data)
 
     return {
         "input": data.model_dump(),
@@ -425,8 +528,15 @@ def plan_compensation(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "recommended": recommended,
         "alternatives": alternatives,
+        "ownership_suggestion": ownership_suggestion,
         "assumptions": [
-            {"key": "assumption.swedish_limited_company", "params": {}},
+            {
+                "key": "assumption.swedish_limited_company",
+                "params": {
+                    "userSharePercentage": round(data.user_share_percentage, 1),
+                    "spouseSharePercentage": round(data.spouse_share_percentage, 1),
+                },
+            },
             {"key": "assumption.only_user_company_salary", "params": {}},
             {"key": "assumption.dividend_limited_to_profit_and_retained", "params": {}},
             {"key": "assumption.municipal_rate_editable", "params": {"year": data.year}},

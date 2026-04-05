@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Skatteuttag is a Docker Compose based FastAPI web app for Swedish salary and dividend planning in a two-owner spouse setup with 50/50 ownership.
+Skatteuttag is a Docker Compose based FastAPI web app for Swedish salary and dividend planning in a two-owner spouse setup with configurable ownership percentages.
 
 ## Scope
 

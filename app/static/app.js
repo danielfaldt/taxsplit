@@ -13,6 +13,9 @@ const resetButton = document.querySelector("#reset-values");
 const metaDescription = document.querySelector("#meta-description");
 const pageTitle = document.querySelector("#page-title");
 const appNameElement = document.querySelector("#app-name");
+const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
+const spouseShareDisplay = document.querySelector("#spouse-share-display");
+const numericInputs = Array.from(document.querySelectorAll(".js-number"));
 
 const TRANSLATIONS = {
   sv: {
@@ -22,7 +25,7 @@ const TRANSLATIONS = {
     "hero.eyebrow": "Svensk skatteplanering för ägarledda bolag",
     "hero.lede": "Planera lön och utdelning i ett svenskt aktiebolag med ett valt planeringsår. Appen förklarar hur utbetalningsåret och lönebasåret hänger ihop.",
     "hero.supported_years": "Stödda år: {years}",
-    "hero.ownership": "50/50 ägande mellan makar",
+    "hero.ownership": "Flexibel ägarfördelning mellan makar",
     "hero.persistence": "Sparas lokalt i webbläsaren",
     "inputs.title": "Inmatning",
     "inputs.subtitle": "Alla belopp anges som årsbelopp i SEK.",
@@ -42,6 +45,8 @@ const TRANSLATIONS = {
     "field.saved_dividend_space_spouse": "Makes/makas sparade utdelningsutrymme",
     "field.user_share_cost_basis": "Användarens omkostnadsbelopp",
     "field.spouse_share_cost_basis": "Makes/makas omkostnadsbelopp",
+    "field.user_share_percentage": "Användarens aktieandel",
+    "field.spouse_share_percentage": "Makes/makas aktieandel",
     "button.calculate": "Beräkna rekommendation",
     "button.reset": "Återställ sparade värden",
     "inputs.helper": "Appen sparar formulärvärden i webbläsarens lokala lagring och återställer dem vid omladdning. Ange bolagets resultat efter ordinarie kostnader. Appen räknar sedan själv på ägarlön, arbetsgivaravgifter och bolagsskatt.",
@@ -57,7 +62,7 @@ const TRANSLATIONS = {
     "metric.recommended_salary": "Rekommenderad lön",
     "metric.recommended_salary_sub": "Bruttoårslön från bolaget",
     "metric.recommended_dividend": "Rekommenderad total utdelning",
-    "metric.recommended_dividend_sub": "Delas 50/50 mellan användare och make/maka",
+    "metric.recommended_dividend_sub": "Fördelas enligt nuvarande aktieägande",
     "metric.user_net": "Användarens netto från bolaget",
     "metric.user_net_sub": "Närmaste modellerade nivå mot önskat mål",
     "metric.household_net": "Hushållets netto från bolaget",
@@ -101,19 +106,23 @@ const TRANSLATIONS = {
     "scenario.total_dividend": "Total utdelning",
     "scenario.user_net": "Användarens netto",
     "scenario.total_tax_burden": "Total skattebelastning",
+    "ownership.title": "Föreslagen ägarfördelning",
+    "ownership.better_split": "Modellen hittar lägre total skatt om användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %.",
+    "ownership.tax_saving": "Beräknad minskning av total skatt: {taxSaving}.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "rule.main": "Huvudregeln",
     "rule.simplification": "Förenklingsregeln",
     "rule.new_combined": "2026 års kombinerade regel",
     "note.salary_basis_year": "Planeringsår {planningYear} använder lönedata från {salaryBasisYear} för det lönebaserade utdelningsutrymmet.",
-    "note.ownership_structure": "Modellen antar att bolaget ägs 50/50 av makar och att endast användaren tar lön från bolaget.",
+    "note.ownership_structure": "Modellen utgår från att användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %, och att endast användaren tar lön från bolaget.",
+    "note.ownership_suggestion_scope": "Ägarfördelningsförslaget är en indikativ skattejämförelse och utgår från att sparat utdelningsutrymme och omkostnadsbelopp följer den nya ekonomiska fördelningen.",
     "note.old_rule_salary_requirement_met": "Det gamla lönekravet är uppfyllt eftersom bolagslönen under basåret är minst {salaryRequirement} SEK.",
     "note.old_rule_salary_requirement_not_met": "Det gamla lönekravet är inte uppfyllt. Bolagslönen under basåret behöver vara cirka {salaryRequirement} SEK för att låsa upp lönebaserat utrymme för 2025.",
     "note.old_rule_saved_space_uplift": "Sparat utdelningsutrymme räknas upp med 4,96 % för 2025 enligt reglerna före 2026.",
     "note.new_rule_combined_method": "2026 års regelverk använder en kombinerad metod: grundbelopp, lönebaserat utrymme, ränta på omkostnadsbelopp över 100 000 SEK och sparat utrymme.",
     "note.new_rule_wage_space_positive": "Det lönebaserade utrymmet är positivt eftersom bolagets kontanta löner under basåret överstiger avdraget på {wageDeduction} SEK.",
     "note.new_rule_wage_space_zero": "Det lönebaserade utrymmet är noll eftersom bolagets kontanta löner under basåret inte överstiger avdraget på {wageDeduction} SEK.",
-    "assumption.swedish_limited_company": "Modellen antar ett svenskt privat aktiebolag med två makar som äger 50 % var.",
+    "assumption.swedish_limited_company": "Modellen antar ett svenskt privat aktiebolag med två makar där användaren äger {userSharePercentage} % och make/maka {spouseSharePercentage} %.",
     "assumption.only_user_company_salary": "Endast användaren antas ta lön från bolaget.",
     "assumption.dividend_limited_to_profit_and_retained": "Utdelning begränsas till aktuell vinst efter lönekostnad och eventuell ingående fri vinst som användaren anger.",
     "assumption.municipal_rate_editable": "Kommunalskatten kan ändras av användaren och förifylls med rikssnittet för valt år.",
@@ -130,7 +139,7 @@ const TRANSLATIONS = {
     "hero.eyebrow": "Swedish tax planning for owner-managed companies",
     "hero.lede": "Plan salary and dividends for a Swedish limited company with one chosen planning year. The app explains how the payout year and the salary-base year interact.",
     "hero.supported_years": "Supported years: {years}",
-    "hero.ownership": "50/50 spouse ownership",
+    "hero.ownership": "Flexible spouse ownership split",
     "hero.persistence": "Local browser persistence",
     "inputs.title": "Inputs",
     "inputs.subtitle": "All amounts are annual SEK values.",
@@ -150,6 +159,8 @@ const TRANSLATIONS = {
     "field.saved_dividend_space_spouse": "Spouse saved dividend space",
     "field.user_share_cost_basis": "User share cost basis",
     "field.spouse_share_cost_basis": "Spouse share cost basis",
+    "field.user_share_percentage": "User ownership share",
+    "field.spouse_share_percentage": "Spouse ownership share",
     "button.calculate": "Calculate recommendation",
     "button.reset": "Reset saved values",
     "inputs.helper": "The app stores your form values in local browser storage and restores them on reload. Enter the company result after ordinary business costs. The app then models owner salary, employer contributions, and corporate tax itself.",
@@ -165,7 +176,7 @@ const TRANSLATIONS = {
     "metric.recommended_salary": "Recommended salary",
     "metric.recommended_salary_sub": "Gross annual salary from the company",
     "metric.recommended_dividend": "Recommended total dividend",
-    "metric.recommended_dividend_sub": "Split 50/50 between user and spouse",
+    "metric.recommended_dividend_sub": "Allocated according to the current ownership split",
     "metric.user_net": "User net income",
     "metric.user_net_sub": "Closest modelled value to the requested target",
     "metric.household_net": "Household net from company",
@@ -209,19 +220,23 @@ const TRANSLATIONS = {
     "scenario.total_dividend": "Total dividend",
     "scenario.user_net": "User net",
     "scenario.total_tax_burden": "Total tax burden",
+    "ownership.title": "Suggested ownership split",
+    "ownership.better_split": "The model finds lower total tax if the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%.",
+    "ownership.tax_saving": "Estimated total-tax reduction: {taxSaving}.",
     "error.calculation_failed": "Calculation failed.",
     "rule.main": "Main rule",
     "rule.simplification": "Simplification rule",
     "rule.new_combined": "2026 combined rule",
     "note.salary_basis_year": "Planning year {planningYear} uses salary data from {salaryBasisYear} for the wage-linked dividend room.",
-    "note.ownership_structure": "The model assumes the company is jointly owned 50/50 by spouses and that only the user receives salary from the company.",
+    "note.ownership_structure": "The model uses an ownership split where the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%, and only the user receives salary from the company.",
+    "note.ownership_suggestion_scope": "The ownership suggestion is an indicative tax comparison and assumes saved dividend room and cost basis follow the new economic split.",
     "note.old_rule_salary_requirement_met": "The old salary-threshold test is met because prior-year company salary is at least {salaryRequirement} SEK.",
     "note.old_rule_salary_requirement_not_met": "The old salary-threshold test is not met. Prior-year company salary needs about {salaryRequirement} SEK to unlock wage-based space for 2025.",
     "note.old_rule_saved_space_uplift": "Saved dividend room is uplifted by 4.96% for 2025 under the pre-2026 rules.",
     "note.new_rule_combined_method": "The 2026 rule set uses one combined method: ground amount, wage-based room, interest on cost basis above 100,000 SEK, and saved room.",
     "note.new_rule_wage_space_positive": "The wage-based room is positive because prior-year company cash salaries exceed the deduction amount of {wageDeduction} SEK.",
     "note.new_rule_wage_space_zero": "The wage-based room is zero because prior-year company cash salaries do not exceed the deduction amount of {wageDeduction} SEK.",
-    "assumption.swedish_limited_company": "The model assumes a Swedish private limited company with two spouse owners holding 50% each.",
+    "assumption.swedish_limited_company": "The model assumes a Swedish private limited company with two spouse owners where the user owns {userSharePercentage}% and the spouse owns {spouseSharePercentage}%.",
     "assumption.only_user_company_salary": "Only the user receives salary from the company.",
     "assumption.dividend_limited_to_profit_and_retained": "Dividends are limited to current-year profit after salary cost and any opening retained earnings entered by the user.",
     "assumption.municipal_rate_editable": "The municipal tax rate is user-editable and defaults to the national average for the selected year.",
@@ -271,11 +286,57 @@ function applyStaticTranslations() {
   appNameElement.textContent = t("brand.app_name");
 }
 
+function parseLocaleNumber(value, kind = "amount") {
+  if (typeof value === "number") {
+    return value;
+  }
+  const raw = String(value || "").trim().replace(/\s/g, "");
+  if (!raw) {
+    return 0;
+  }
+
+  if (kind === "amount") {
+    const parsed = Number(raw.replace(/[,.]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const lastComma = raw.lastIndexOf(",");
+  const lastDot = raw.lastIndexOf(".");
+  const decimalSeparator = lastComma > lastDot ? "," : ".";
+  const normalized = decimalSeparator === ","
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw.replace(/,/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatInputValue(value, kind = "amount") {
+  const number = parseLocaleNumber(value, kind);
+  if (kind === "percent") {
+    return new Intl.NumberFormat(currentLanguage === "sv" ? "sv-SE" : "en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(number);
+  }
+  return new Intl.NumberFormat(currentLanguage === "sv" ? "sv-SE" : "en-US", {
+    maximumFractionDigits: 0,
+  }).format(number);
+}
+
+function refreshFormattedInputs() {
+  numericInputs.forEach((input) => {
+    input.value = formatInputValue(input.value, input.dataset.numberKind);
+  });
+  syncSpouseShareDisplay();
+}
+
 function formToObject() {
   const formData = new FormData(form);
-  return Object.fromEntries(
-    Array.from(formData.entries()).map(([key, value]) => [key, Number(value)])
-  );
+  return Object.fromEntries(Array.from(formData.entries()).map(([key, value]) => {
+    const field = form.elements.namedItem(key);
+    const kind = field?.dataset?.numberKind || "amount";
+    return [key, parseLocaleNumber(value, kind)];
+  }));
 }
 
 function setFieldLabels(year) {
@@ -292,6 +353,11 @@ function setFieldLabels(year) {
   });
 }
 
+function syncSpouseShareDisplay() {
+  const userShare = Math.min(Math.max(parseLocaleNumber(form.elements.namedItem("user_share_percentage").value, "percent"), 0), 100);
+  spouseShareDisplay.value = formatInputValue(100 - userShare, "percent");
+}
+
 function restoreState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   const source = saved ? JSON.parse(saved) : window.APP_DEFAULTS;
@@ -302,6 +368,7 @@ function restoreState() {
       field.value = value;
     }
   }
+  refreshFormattedInputs();
   setFieldLabels(source.year || window.APP_DEFAULTS.year);
 }
 
@@ -349,6 +416,27 @@ function renderMetrics(result) {
     ${metric(t("metric.household_net"), formatCurrency(recommendation.household_net_from_company), t("metric.household_net_sub"))}
     ${metric(t("metric.distance_to_target"), formatCurrency(recommendation.distance_to_target), recommendation.shortfall_to_target > 0 ? t("metric.distance_target_shortfall") : t("metric.distance_target_reached"))}
     ${metric(t("metric.total_tax_burden"), formatCurrency(recommendation.total_tax_burden), t("metric.total_tax_burden_sub"))}
+  `;
+}
+
+function renderOwnershipSuggestion(result) {
+  if (!result.ownership_suggestion) {
+    ownershipSuggestionBox.innerHTML = "";
+    return;
+  }
+  const suggestion = result.ownership_suggestion;
+  ownershipSuggestionBox.innerHTML = `
+    <div class="note">
+      <strong>${t("ownership.title")}</strong><br>
+      ${t("ownership.better_split", {
+        userSharePercentage: formatInputValue(suggestion.suggested_user_share_percentage, "percent"),
+        spouseSharePercentage: formatInputValue(suggestion.suggested_spouse_share_percentage, "percent"),
+      })}<br>
+      ${t("ownership.tax_saving", {
+        taxSaving: formatCurrency(suggestion.estimated_tax_saving),
+      })}<br>
+      ${translateMessage(suggestion.note)}
+    </div>
   `;
 }
 
@@ -471,6 +559,7 @@ async function submitForm() {
   const result = await response.json();
   lastResult = result;
   renderMetrics(result);
+  renderOwnershipSuggestion(result);
   renderBreakdown(result);
   renderAlternatives(result);
   renderAssumptions(result);
@@ -483,14 +572,31 @@ yearInput.addEventListener("change", (event) => {
 
 form.addEventListener("input", saveStateIfFormField);
 form.addEventListener("change", saveStateIfFormField);
+form.addEventListener("change", syncSpouseShareDisplay);
+form.addEventListener("input", (event) => {
+  if (event.target && event.target.name === "user_share_percentage") {
+    syncSpouseShareDisplay();
+  }
+});
+
+numericInputs.forEach((input) => {
+  input.addEventListener("blur", () => {
+    input.value = formatInputValue(input.value, input.dataset.numberKind);
+    if (input.name === "user_share_percentage") {
+      syncSpouseShareDisplay();
+    }
+  });
+});
 
 languageSwitch.addEventListener("change", (event) => {
   currentLanguage = event.target.value;
   localStorage.setItem(LANGUAGE_KEY, currentLanguage);
   applyStaticTranslations();
+  refreshFormattedInputs();
   setFieldLabels(yearInput.value);
   if (lastResult) {
     renderMetrics(lastResult);
+    renderOwnershipSuggestion(lastResult);
     renderBreakdown(lastResult);
     renderAlternatives(lastResult);
     renderAssumptions(lastResult);
