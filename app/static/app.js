@@ -128,9 +128,12 @@ const TRANSLATIONS = {
     "noun.rule": "regel",
     "noun.qualified_dividend": "kvalificerade utdelning",
     "noun.service_taxed_excess": "tjänstebeskattade överskjutande del",
-    "ownership.title": "Föreslagen ägarfördelning",
+    "ownership.title": "Ägarfördelningsanalys",
+    "ownership.current_split": "Nuvarande fördelning: {userName} {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "ownership.better_split": "Modellen hittar lägre total skatt om {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "ownership.tax_saving": "Beräknad minskning av total skatt: {taxSaving}.",
+    "ownership.no_better_split": "Ingen bättre ägarfördelning hittades inom modellens sökyta.",
+    "ownership.no_better_split_detail": "Nuvarande fördelning ser redan skatteeffektiv ut givet inmatningen och de antaganden som används här.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "rule.main": "Huvudregeln",
     "rule.simplification": "Förenklingsregeln",
@@ -252,9 +255,12 @@ const TRANSLATIONS = {
     "noun.rule": "rule",
     "noun.qualified_dividend": "qualified dividend",
     "noun.service_taxed_excess": "service-taxed excess",
-    "ownership.title": "Suggested ownership split",
+    "ownership.title": "Ownership analysis",
+    "ownership.current_split": "Current split: {userName} {userSharePercentage}% and {spouseName} {spouseSharePercentage}%.",
     "ownership.better_split": "The model finds lower total tax if {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
     "ownership.tax_saving": "Estimated total-tax reduction: {taxSaving}.",
+    "ownership.no_better_split": "No better ownership split was found within the model search space.",
+    "ownership.no_better_split_detail": "The current split already looks tax-efficient given the inputs and assumptions used here.",
     "error.calculation_failed": "Calculation failed.",
     "rule.main": "Main rule",
     "rule.simplification": "Simplification rule",
@@ -513,14 +519,30 @@ function renderMetrics(result) {
 }
 
 function renderOwnershipSuggestion(result) {
-  if (!result.ownership_suggestion) {
-    ownershipSuggestionBox.innerHTML = "";
+  const suggestion = result.ownership_suggestion;
+  const currentSplit = t("ownership.current_split", {
+    userName: getOwnerName("user"),
+    spouseName: getOwnerName("spouse"),
+    userSharePercentage: formatInputValue(result.input.user_share_percentage, "percent"),
+    spouseSharePercentage: formatInputValue(100 - result.input.user_share_percentage, "percent"),
+  });
+
+  if (!suggestion) {
+    ownershipSuggestionBox.innerHTML = `
+      <div class="note">
+        <strong>${t("ownership.title")}</strong><br>
+        ${currentSplit}<br>
+        ${t("ownership.no_better_split")}<br>
+        ${t("ownership.no_better_split_detail")}
+      </div>
+    `;
     return;
   }
-  const suggestion = result.ownership_suggestion;
+
   ownershipSuggestionBox.innerHTML = `
     <div class="note">
       <strong>${t("ownership.title")}</strong><br>
+      ${currentSplit}<br>
       ${t("ownership.better_split", {
         userName: getOwnerName("user"),
         spouseName: getOwnerName("spouse"),
