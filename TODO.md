@@ -6,8 +6,8 @@
 
 ## Open
 
-- [ ] T015 · Förklaring av hur analysen gått till beskriven i text/formel eller liknande
 - [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda)
+- [ ] T015 · Förklaring av hur analysen gått till beskriven i text/formel eller liknande
 - [ ] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
 - [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
 - [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
