@@ -7,7 +7,7 @@
 ## Open
 
 - [ ] T016 · Förklara hur analysen gjorde och vilka parametrar som styrde. Lättbegripligt språk. Ändå tydligt.
-- [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda)
+- [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda) etc
 - [ ] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
 - [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
 - [ ] T003 · Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
