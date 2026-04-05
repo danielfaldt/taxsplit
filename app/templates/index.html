@@ -232,10 +232,16 @@
               </label>
 
               <label class="field">
-                <span id="car-benefit-pensionable-label" data-i18n="field.car_benefit_is_pensionable">Car benefit counts toward pension base</span>
+                <div class="label-row">
+                  <span id="car-benefit-pensionable-label" class="label-text" data-i18n="field.car_benefit_is_pensionable">Car benefit counts toward pension base</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.car_benefit_is_pensionable">Tick this only if your pension setup actually counts the car benefit as pensionable salary. If you are unsure, leave it unticked. It only changes how much occupational pension the model allows.</div>
+                  </details>
+                </div>
                 <div class="checkbox-row">
                   <input name="car_benefit_is_pensionable" id="car-benefit-is-pensionable" type="checkbox" {% if defaults.car_benefit_is_pensionable %}checked{% endif %}>
-                  <span data-i18n="field.car_benefit_is_pensionable_hint">Use this only if the car benefit is intended to be pensionable in the company's pension setup.</span>
+                  <span data-i18n="field.car_benefit_is_pensionable_hint">Count the car benefit in the pension base</span>
                 </div>
               </label>
 
