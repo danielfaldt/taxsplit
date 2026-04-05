@@ -62,6 +62,19 @@ COPY: dict[str, dict[str, str]] = {
         "label_dividend_share": "Andel som utdelning",
         "label_mix_assessment": "Bedömning",
         "label_mix_comparison": "Jämförelsepunkt",
+        "label_result_before_corporate_tax": "Resultat före bolagsskatt",
+        "label_cash_salary": "Kontant lön",
+        "label_employer_contributions": "Arbetsgivaravgifter",
+        "label_corporate_tax_detail": "Bolagsskatt",
+        "label_available_dividend_cash": "Tillgänglig utdelningslikvid",
+        "label_municipal_tax_detail": "Kommunal skatt",
+        "label_state_tax_detail": "Statlig skatt",
+        "label_incremental_salary_tax": "Tillkommande löneskatt",
+        "label_net_cash_salary": "Nettokontant lön",
+        "label_alt_salary": "Lön",
+        "label_alt_dividend": "Utdelning",
+        "label_alt_user_net": "Användarnetto",
+        "label_alt_tax": "Skatt",
         "label_company_budget": "Bolagsbudget",
         "label_salary_tax": "Löneskatt",
         "label_dividend_room": "Utdelningsutrymme",
@@ -122,6 +135,19 @@ COPY: dict[str, dict[str, str]] = {
         "label_dividend_share": "Share taken as dividend",
         "label_mix_assessment": "Assessment",
         "label_mix_comparison": "Comparison point",
+        "label_result_before_corporate_tax": "Result before corporate tax",
+        "label_cash_salary": "Cash salary",
+        "label_employer_contributions": "Employer contributions",
+        "label_corporate_tax_detail": "Corporate tax",
+        "label_available_dividend_cash": "Available dividend cash",
+        "label_municipal_tax_detail": "Municipal tax",
+        "label_state_tax_detail": "State tax",
+        "label_incremental_salary_tax": "Incremental salary tax",
+        "label_net_cash_salary": "Net cash salary",
+        "label_alt_salary": "Salary",
+        "label_alt_dividend": "Dividend",
+        "label_alt_user_net": "User net",
+        "label_alt_tax": "Tax",
         "label_company_budget": "Company budget",
         "label_salary_tax": "Salary tax",
         "label_dividend_room": "Dividend room",
@@ -426,16 +452,16 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
         rows_to_table(
             [
                 (copy["label_company_budget"], ""),
-                ("Result before corporate tax", money(input_data["company_result_before_corporate_tax"], language)),
-                ("Cash salary", money(recommended["salary"], language)),
-                ("Employer contributions", money(company["employer_contributions"], language)),
-                ("Corporate tax", money(company["corporate_tax"], language)),
-                ("Available dividend cash", money(company["available_dividend_cash"], language)),
+                (copy["label_result_before_corporate_tax"], money(input_data["company_result_before_corporate_tax"], language)),
+                (copy["label_cash_salary"], money(recommended["salary"], language)),
+                (copy["label_employer_contributions"], money(company["employer_contributions"], language)),
+                (copy["label_corporate_tax_detail"], money(company["corporate_tax"], language)),
+                (copy["label_available_dividend_cash"], money(company["available_dividend_cash"], language)),
                 (copy["label_salary_tax"], ""),
-                ("Municipal tax", money(salary_tax["municipal_tax"], language)),
-                ("State tax", money(salary_tax["state_tax"], language)),
-                ("Incremental salary tax", money(recommended["incremental_user_salary_tax"], language)),
-                ("Net cash salary", money(recommended["user_net_cash_salary"], language)),
+                (copy["label_municipal_tax_detail"], money(salary_tax["municipal_tax"], language)),
+                (copy["label_state_tax_detail"], money(salary_tax["state_tax"], language)),
+                (copy["label_incremental_salary_tax"], money(recommended["incremental_user_salary_tax"], language)),
+                (copy["label_net_cash_salary"], money(recommended["user_net_cash_salary"], language)),
                 (copy["label_dividend_room"], ""),
                 (f"{user_name}", money(spaces["user_space"], language)),
                 (f"{spouse_name}", money(spaces["spouse_space"], language)),
@@ -475,10 +501,10 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
         story.append(
             paragraph(
                 f"- {copy['label_mix_comparison']}: {translate_message({'key': comparison['key'], 'params': {}}, language, user_name, spouse_name)}. "
-                f"Salary {money(comparison['scenario']['salary'], language)}, "
-                f"dividend {money(comparison['scenario']['total_dividend'], language)}, "
-                f"user net {money(comparison['scenario']['user_net_from_company'], language)}, "
-                f"tax {money(comparison['scenario']['total_tax_burden'], language)}.",
+                f"{copy['label_alt_salary']} {money(comparison['scenario']['salary'], language)}, "
+                f"{copy['label_alt_dividend']} {money(comparison['scenario']['total_dividend'], language)}, "
+                f"{copy['label_alt_user_net']} {money(comparison['scenario']['user_net_from_company'], language)}, "
+                f"{copy['label_alt_tax']} {money(comparison['scenario']['total_tax_burden'], language)}.",
                 styles["body"],
             )
         )
@@ -492,10 +518,10 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
                         MESSAGE_COPY[language].get(f"alternative.{entry['label']}", entry["label"]),
                         ", ".join(
                             [
-                                f"Salary {money(entry['scenario']['salary'], language)}",
-                                f"Dividend {money(entry['scenario']['total_dividend'], language)}",
-                                f"User net {money(entry['scenario']['user_net_from_company'], language)}",
-                                f"Tax {money(entry['scenario']['total_tax_burden'], language)}",
+                                f"{copy['label_alt_salary']} {money(entry['scenario']['salary'], language)}",
+                                f"{copy['label_alt_dividend']} {money(entry['scenario']['total_dividend'], language)}",
+                                f"{copy['label_alt_user_net']} {money(entry['scenario']['user_net_from_company'], language)}",
+                                f"{copy['label_alt_tax']} {money(entry['scenario']['total_tax_burden'], language)}",
                             ]
                         ),
                     )
