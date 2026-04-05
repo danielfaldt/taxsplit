@@ -22,6 +22,10 @@ def test_index_renders():
     assert 'name="planned_user_pension"' in response.text
     assert 'name="periodization_fund_change"' in response.text
     assert 'name="user_car_benefit"' in response.text
+    assert 'id="tax-municipality"' in response.text
+    assert 'id="include-church-fee"' in response.text
+    assert 'id="tax-parish"' in response.text
+    assert 'id="municipal-tax-rate"' in response.text
     assert 'class="info-popover"' in response.text
     assert 'data-i18n="info.opening_retained_earnings"' in response.text
 
@@ -39,6 +43,19 @@ def test_api_ownership_analysis_returns_json():
     assert response.status_code == 200
     payload = response.json()
     assert "ownership_suggestion" in payload
+
+
+def test_api_municipal_tax_returns_catalog():
+    response = client.get("/api/municipal-tax/2026")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["year"] == 2026
+    assert payload["municipalities"]
+    first = payload["municipalities"][0]
+    assert "municipality" in first
+    assert "total_excluding_church" in first
+    assert "parishes" in first
+    assert first["parishes"]
 
 
 def test_security_and_sitemap_exist():
@@ -62,3 +79,12 @@ def test_client_script_persists_form_state_on_input():
     assert "field.spouse_birth_year" in body
     assert "info.opening_retained_earnings" in body
     assert "info.periodization_fund_change" in body
+    assert "ownership.loading_title" in body
+    assert "ownership-loading" in body
+    assert "ownership.input_label" in body
+    assert "ownership.proposal_label" in body
+    assert "ownership-comparison-row" in body
+    assert "/api/municipal-tax/" in body
+    assert "tax-municipality" in body
+    assert "include-church-fee" in body
+    assert "municipalTaxManualOverride" in body

@@ -22,6 +22,11 @@ const userOtherServiceIncomeLabel = document.querySelector("#user-other-service-
 const spouseExternalSalaryLabel = document.querySelector("#spouse-external-salary-label");
 const userCarBenefitLabel = document.querySelector("#user-car-benefit-label");
 const plannedUserPensionLabel = document.querySelector("#planned-user-pension-label");
+const taxMunicipalitySelect = document.querySelector("#tax-municipality");
+const taxParishSelect = document.querySelector("#tax-parish");
+const taxParishField = document.querySelector("#tax-parish-field");
+const includeChurchFeeInput = document.querySelector("#include-church-fee");
+const municipalTaxRateInput = document.querySelector("#municipal-tax-rate");
 const userShareLabel = document.querySelector("#user-share-label");
 const spouseShareLabel = document.querySelector("#spouse-share-label");
 const userShareDisplay = document.querySelector("#user-share-display");
@@ -50,7 +55,13 @@ const TRANSLATIONS = {
     "field.spouse_external_salary": "Makes/makas lön från annan arbetsgivare",
     "field.company_result_before_corporate_tax": "Bolagets resultat före bolagsskatt",
     "field.opening_retained_earnings": "Ingående fria vinstmedel tillgängliga för utdelning",
+    "field.tax_municipality": "Kommun för skatteautoifyllning",
+    "field.tax_parish": "Församling",
+    "field.include_church_fee": "Medlem i Svenska kyrkan",
+    "field.include_church_fee_hint": "Lägg till kyrkoavgift från vald församling.",
     "field.municipal_tax_rate": "Kommunalskatt",
+    "field.tax_option_placeholder": "Välj kommun",
+    "field.parish_option_placeholder": "Välj församling",
     "salary_basis.title": "Lönebasår för utdelningsutrymme",
     "salary_basis.text": "För planeringsår {planningYear} tittar utdelningsutrymmet tillbaka på löneår {salaryBasisYear}.",
     "field.prior_year_company_cash_salaries": "Bolagets kontanta löner under {salaryBasisYear}",
@@ -78,13 +89,14 @@ const TRANSLATIONS = {
     "info.periodization_fund_change": "Ange ett positivt belopp om du vill skjuta en del av årets vinst framåt och sänka skatten nu. Ange ett negativt belopp om du vill återföra en tidigare periodiseringsfond till beskattning i år.",
     "info.prior_year_company_cash_salaries": "Det här är bolagets totala kontanta löner under lönebasåret. Uppgiften används för att räkna fram det lönebaserade utdelningsutrymmet.",
     "info.prior_year_user_company_salary": "Det här är din egen kontanta lön från bolaget under lönebasåret. Appen använder den för att se om ditt utdelningsutrymme får använda löneunderlaget.",
+    "info.municipal_tax_rate": "Fältet kan autoifyllas från vald kommun. Om medlemskap i Svenska kyrkan är aktivt läggs kyrkoavgiften från vald församling till. Du kan fortfarande ändra procentsatsen manuellt.",
     "compensation.title": "Justeringar i ersättningen",
     "compensation.subtitle": "Bilförmån, tjänstepension och periodiseringsfond modelleras ovanpå vald kontant lön.",
     "placeholder.user_display_name": "Ditt namn",
     "placeholder.spouse_display_name": "Namn på make/maka",
     "button.calculate": "Beräkna rekommendation",
     "button.reset": "Återställ sparade värden",
-    "inputs.helper": "Appen sparar formulärvärden i webbläsarens lokala lagring och återställer dem vid omladdning. Ange bolagets resultat efter ordinarie kostnader. Appen räknar sedan själv på ägarlön, arbetsgivaravgifter och bolagsskatt.",
+    "inputs.helper": "Appen sparar formulärvärden i webbläsarens lokala lagring och återställer dem vid omladdning.",
     "recommended.title": "Rekommenderad plan",
     "recommended.subtitle": "Närmast målet, därefter prioritet på lägre total skatt.",
     "recommended.empty": "Skicka formuläret för att få en rekommendation.",
@@ -152,17 +164,21 @@ const TRANSLATIONS = {
     "scenario.total_tax_burden": "Total skattebelastning",
     "owner.user_default": "Användaren",
     "owner.spouse_default": "Make/maka",
-    "noun.dividend_room": "utrymme",
-    "noun.rule": "regel",
-    "noun.qualified_dividend": "kvalificerade utdelning",
-    "noun.service_taxed_excess": "tjänstebeskattade överskjutande del",
+    "noun.dividend_room": "Utrymme",
+    "noun.rule": "Regel",
+    "noun.qualified_dividend": "Kvalificerad utdelning",
+    "noun.service_taxed_excess": "Tjänstebeskattad överskjutande del",
     "ownership.title": "Ägarfördelningsanalys",
+    "ownership.input_label": "Indata",
+    "ownership.proposal_label": "Förslag",
     "ownership.current_split": "Nuvarande fördelning: {userName} {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "ownership.better_split": "Modellen hittar lägre total skatt om {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "ownership.tax_saving": "Beräknad minskning av total skatt: {taxSaving}.",
     "ownership.no_better_split": "Ingen bättre ägarfördelning hittades inom modellens sökyta.",
     "ownership.no_better_split_detail": "Nuvarande fördelning ser redan skatteeffektiv ut givet inmatningen och de antaganden som används här.",
     "ownership.loading": "Analyserar om en annan ägarfördelning kan ge lägre total skatt.",
+    "ownership.loading_title": "Ägarfördelningsanalys pågår",
+    "ownership.loading_detail": "Rekommendationen visas redan. Nu jämför appen flera ägarfördelningar i bakgrunden.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "status.calculating": "Beräknar rekommendation...",
     "button.calculating": "Beräknar...",
@@ -181,7 +197,7 @@ const TRANSLATIONS = {
     "assumption.swedish_limited_company": "Den aktuella modellen avser ett svenskt privat aktiebolag med två makar där {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %.",
     "assumption.only_user_company_salary": "Endast {userName} antas ta lön från bolaget.",
     "assumption.dividend_limited_to_profit_and_retained": "Utdelning begränsas till aktuell vinst efter lönekostnad och eventuell ingående fri vinst som användaren anger.",
-    "assumption.municipal_rate_editable": "Kommunalskatten kan ändras av användaren och förifylls med rikssnittet för valt år.",
+    "assumption.municipal_rate_editable": "Kommunalskatten kan autoifyllas från vald kommun och, vid behov, vald församling. Användaren kan fortfarande justera procentsatsen manuellt.",
     "assumption.official_rule_data": "Appen modellerar årsspecifik löneskatt och 3:12-liknande utdelningsskatt med officiella regeldata för 2025 och 2026.",
     "assumption.spouse_salary_affects_service_tax": "Tjänstebeskattad överskjutande utdelning modelleras som extra tjänsteinkomst där lönen från annan arbetsgivare för {spouseName} påverkar skatteeffekten.",
     "assumption.birth_year_affects_tax": "Födelseår påverkar den personliga beskattningen och arbetsgivaravgiften enligt reglerna som gäller för valt år.",
@@ -209,7 +225,13 @@ const TRANSLATIONS = {
     "field.spouse_external_salary": "Spouse salary from other employer",
     "field.company_result_before_corporate_tax": "Company result before corporate tax",
     "field.opening_retained_earnings": "Opening retained earnings available for dividends",
+    "field.tax_municipality": "Municipality for tax auto-fill",
+    "field.tax_parish": "Parish",
+    "field.include_church_fee": "Member of the Church of Sweden",
+    "field.include_church_fee_hint": "Add church fee from the selected parish.",
     "field.municipal_tax_rate": "Municipal tax rate",
+    "field.tax_option_placeholder": "Select municipality",
+    "field.parish_option_placeholder": "Select parish",
     "salary_basis.title": "Salary-base year for dividend room",
     "salary_basis.text": "For planning year {planningYear}, the dividend room looks back to salary year {salaryBasisYear}.",
     "field.prior_year_company_cash_salaries": "Company cash salaries in {salaryBasisYear}",
@@ -237,13 +259,14 @@ const TRANSLATIONS = {
     "info.periodization_fund_change": "Use a positive amount if you want to move part of this year's profit forward and lower tax now. Use a negative amount if you want to bring an earlier periodization fund back into taxation this year.",
     "info.prior_year_company_cash_salaries": "This is the company's total cash salary paid in the salary-base year. It is used to calculate the wage-linked part of the dividend room.",
     "info.prior_year_user_company_salary": "This is your own cash salary from the company in the salary-base year. The app uses it to test whether your dividend room can use the salary-based rule.",
+    "info.municipal_tax_rate": "The field can be auto-filled from the selected municipality. If church membership is enabled, the selected parish adds the church fee. You can still edit the rate manually.",
     "compensation.title": "Compensation adjustments",
     "compensation.subtitle": "Benefit value, pension, and periodization fund are modelled on top of the selected cash salary.",
     "placeholder.user_display_name": "Your name",
     "placeholder.spouse_display_name": "Spouse name",
     "button.calculate": "Calculate recommendation",
     "button.reset": "Reset saved values",
-    "inputs.helper": "The app stores your form values in local browser storage and restores them on reload. Enter the company result after ordinary business costs. The app then models owner salary, employer contributions, and corporate tax itself.",
+    "inputs.helper": "The app stores your form values in local browser storage and restores them on reload.",
     "recommended.title": "Recommended plan",
     "recommended.subtitle": "Closest to the target, then biased toward lower total tax.",
     "recommended.empty": "Submit the form to generate a recommendation.",
@@ -311,17 +334,21 @@ const TRANSLATIONS = {
     "scenario.total_tax_burden": "Total tax burden",
     "owner.user_default": "User",
     "owner.spouse_default": "Spouse",
-    "noun.dividend_room": "room",
-    "noun.rule": "rule",
-    "noun.qualified_dividend": "qualified dividend",
-    "noun.service_taxed_excess": "service-taxed excess",
+    "noun.dividend_room": "Dividend room",
+    "noun.rule": "Rule",
+    "noun.qualified_dividend": "Qualified dividend",
+    "noun.service_taxed_excess": "Service-taxed excess",
     "ownership.title": "Ownership analysis",
+    "ownership.input_label": "Input",
+    "ownership.proposal_label": "Proposal",
     "ownership.current_split": "Current split: {userName} {userSharePercentage}% and {spouseName} {spouseSharePercentage}%.",
     "ownership.better_split": "The model finds lower total tax if {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
     "ownership.tax_saving": "Estimated total-tax reduction: {taxSaving}.",
     "ownership.no_better_split": "No better ownership split was found within the model search space.",
     "ownership.no_better_split_detail": "The current split already looks tax-efficient given the inputs and assumptions used here.",
     "ownership.loading": "Analyzing whether a different ownership split can reduce total tax.",
+    "ownership.loading_title": "Ownership analysis in progress",
+    "ownership.loading_detail": "The recommendation is already shown. The app is now comparing multiple ownership splits in the background.",
     "error.calculation_failed": "Calculation failed.",
     "status.calculating": "Calculating recommendation...",
     "button.calculating": "Calculating...",
@@ -340,7 +367,7 @@ const TRANSLATIONS = {
     "assumption.swedish_limited_company": "The current model covers a Swedish private limited company with two spouse owners where {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%.",
     "assumption.only_user_company_salary": "Only {userName} receives salary from the company.",
     "assumption.dividend_limited_to_profit_and_retained": "Dividends are limited to current-year profit after salary cost and any opening retained earnings entered by the user.",
-    "assumption.municipal_rate_editable": "The municipal tax rate is user-editable and defaults to the national average for the selected year.",
+    "assumption.municipal_rate_editable": "The municipal tax rate can be auto-filled from the selected municipality and, when relevant, the selected parish. The user can still override the rate manually.",
     "assumption.official_rule_data": "The app models year-specific salary tax and 3:12-style dividend tax using official 2025 and 2026 rule data.",
     "assumption.spouse_salary_affects_service_tax": "Service-taxed excess dividend is modelled as additional service income with salary from another employer for {spouseName} affecting that personal tax outcome.",
     "assumption.birth_year_affects_tax": "Birth year affects personal taxation and employer contributions under the rules for the selected year.",
@@ -356,6 +383,9 @@ const TRANSLATIONS = {
 
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "sv";
 let lastResult = null;
+let taxCatalog = new Map();
+let municipalTaxManualOverride = false;
+let applyingMunicipalTaxRate = false;
 
 function formatCurrency(value) {
   return new Intl.NumberFormat(currentLanguage === "sv" ? "sv-SE" : "en-US", {
@@ -393,6 +423,19 @@ function applyStaticTranslations() {
   metaDescription.setAttribute("content", t("meta.description"));
   pageTitle.textContent = t("brand.app_name");
   appNameElement.textContent = t("brand.app_name");
+}
+
+function readSavedState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return { ...window.APP_DEFAULTS };
+  }
+
+  try {
+    return { ...window.APP_DEFAULTS, ...JSON.parse(saved) };
+  } catch {
+    return { ...window.APP_DEFAULTS };
+  }
 }
 
 function parseLocaleNumber(value, kind = "amount") {
@@ -448,15 +491,28 @@ function refreshFormattedInputs() {
 }
 
 function formToObject() {
-  const formData = new FormData(form);
-  return Object.fromEntries(Array.from(formData.entries()).map(([key, value]) => {
-    const field = form.elements.namedItem(key);
-    const kind = field?.dataset?.numberKind;
-    if (!kind) {
-      return [key, String(value || "").trim()];
+  const values = {};
+
+  Array.from(form.elements).forEach((field) => {
+    if (!field?.name || field.disabled) {
+      return;
     }
-    return [key, parseLocaleNumber(value, kind)];
-  }));
+
+    if (field.type === "checkbox") {
+      values[field.name] = field.checked;
+      return;
+    }
+
+    const kind = field.dataset?.numberKind;
+    if (!kind) {
+      values[field.name] = String(field.value || "").trim();
+      return;
+    }
+
+    values[field.name] = parseLocaleNumber(field.value, kind);
+  });
+
+  return values;
 }
 
 function getOwnerName(ownerType) {
@@ -469,7 +525,7 @@ function getOwnerName(ownerType) {
 }
 
 function ownerLabel(ownerType, nounKey) {
-  return `${getOwnerName(ownerType)} ${t(nounKey)}`;
+  return `${getOwnerName(ownerType)}: ${t(nounKey)}`;
 }
 
 function ownerSpecificText(kind, ownerType, params = {}) {
@@ -537,22 +593,156 @@ function syncOwnershipDisplay() {
   setFieldLabels(yearInput.value);
 }
 
-function restoreState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const source = saved ? JSON.parse(saved) : window.APP_DEFAULTS;
+function setFieldValue(field, value) {
+  if (field.type === "checkbox") {
+    field.checked = Boolean(value);
+    return;
+  }
+  field.value = value ?? "";
+}
+
+async function fetchTaxCatalog(year) {
+  if (taxCatalog.has(year)) {
+    return taxCatalog.get(year);
+  }
+
+  const response = await fetch(`/api/municipal-tax/${year}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || t("error.calculation_failed"));
+  }
+
+  const payload = await response.json();
+  taxCatalog.set(year, payload.municipalities);
+  return payload.municipalities;
+}
+
+function selectedMunicipalityRecord() {
+  const municipalities = taxCatalog.get(Number(yearInput.value)) || [];
+  return municipalities.find((item) => item.municipality === taxMunicipalitySelect.value) || null;
+}
+
+function populateTaxMunicipalities(selectedMunicipality = "") {
+  const municipalities = taxCatalog.get(Number(yearInput.value)) || [];
+  const selectedValue = selectedMunicipality || taxMunicipalitySelect.value;
+  const placeholder = t("field.tax_option_placeholder");
+
+  taxMunicipalitySelect.innerHTML = [
+    `<option value="">${placeholder}</option>`,
+    ...municipalities.map((item) => {
+      const selected = item.municipality === selectedValue ? " selected" : "";
+      return `<option value="${item.municipality}"${selected}>${item.municipality}</option>`;
+    }),
+  ].join("");
+}
+
+function populateTaxParishes(selectedParish = "") {
+  const municipality = selectedMunicipalityRecord();
+  const selectedValue = selectedParish || taxParishSelect.value;
+  const placeholder = t("field.parish_option_placeholder");
+  const parishes = municipality?.parishes || [];
+
+  taxParishSelect.innerHTML = [
+    `<option value="">${placeholder}</option>`,
+    ...parishes.map((item) => {
+      const selected = item.parish === selectedValue ? " selected" : "";
+      return `<option value="${item.parish}"${selected}>${item.parish}</option>`;
+    }),
+  ].join("");
+
+  if (includeChurchFeeInput.checked && parishes.length > 0 && !taxParishSelect.value) {
+    taxParishSelect.value = parishes[0].parish;
+  }
+}
+
+function syncParishFieldVisibility() {
+  const municipality = selectedMunicipalityRecord();
+  const showParishField = includeChurchFeeInput.checked && Boolean(municipality?.parishes?.length);
+  taxParishField.classList.toggle("hidden", !showParishField);
+  taxParishSelect.disabled = !showParishField;
+}
+
+function findSelectedParish() {
+  const municipality = selectedMunicipalityRecord();
+  return municipality?.parishes?.find((item) => item.parish === taxParishSelect.value) || null;
+}
+
+function applyMunicipalTaxAutofill({ force = false } = {}) {
+  const municipality = selectedMunicipalityRecord();
+  if (!municipality || (municipalTaxManualOverride && !force)) {
+    return;
+  }
+
+  let rate = municipality.total_excluding_church;
+  if (includeChurchFeeInput.checked) {
+    const parish = findSelectedParish();
+    if (parish) {
+      rate = parish.total_including_church;
+    }
+  }
+
+  applyingMunicipalTaxRate = true;
+  municipalTaxRateInput.value = formatInputValue(rate, "percent");
+  applyingMunicipalTaxRate = false;
+}
+
+async function syncMunicipalTaxSelectors({ year, municipality, parish, forceAutofill = false } = {}) {
+  const targetYear = Number(year || yearInput.value);
+  yearInput.value = String(targetYear);
+  await fetchTaxCatalog(targetYear);
+  populateTaxMunicipalities(municipality);
+
+  if (municipality) {
+    taxMunicipalitySelect.value = municipality;
+  }
+
+  populateTaxParishes(parish);
+
+  if (parish) {
+    taxParishSelect.value = parish;
+  }
+
+  syncParishFieldVisibility();
+  applyMunicipalTaxAutofill({ force: forceAutofill });
+}
+
+async function restoreState() {
+  const source = readSavedState();
+  municipalTaxManualOverride = Boolean(source._municipal_tax_manual_override);
+  yearInput.value = String(source.year || window.APP_DEFAULTS.year);
+
+  await syncMunicipalTaxSelectors({
+    year: source.year || window.APP_DEFAULTS.year,
+    municipality: source.tax_municipality || "",
+    parish: source.tax_parish || "",
+    forceAutofill: !municipalTaxManualOverride,
+  });
 
   for (const [key, value] of Object.entries(source)) {
     const field = form.elements.namedItem(key);
     if (field) {
-      field.value = value;
+      setFieldValue(field, value);
     }
+  }
+
+  populateTaxMunicipalities(source.tax_municipality || "");
+  populateTaxParishes(source.tax_parish || "");
+  syncParishFieldVisibility();
+  if (!municipalTaxManualOverride) {
+    applyMunicipalTaxAutofill({ force: true });
   }
   refreshFormattedInputs();
   setFieldLabels(source.year || window.APP_DEFAULTS.year);
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      ...formToObject(),
+      _municipal_tax_manual_override: municipalTaxManualOverride,
+    }),
+  );
 }
 
 function saveStateIfFormField(event) {
@@ -616,7 +806,10 @@ function renderOwnershipSuggestion(result) {
     ownershipSuggestionBox.innerHTML = `
       <div class="note">
         <strong>${t("ownership.title")}</strong><br>
-        ${currentSplit}<br>
+        <div class="ownership-comparison-row">
+          <span class="ownership-chip">${t("ownership.input_label")}</span>
+          <span>${currentSplit}</span>
+        </div>
         ${t("ownership.no_better_split")}<br>
         ${t("ownership.no_better_split_detail")}
       </div>
@@ -627,13 +820,21 @@ function renderOwnershipSuggestion(result) {
   ownershipSuggestionBox.innerHTML = `
     <div class="note">
       <strong>${t("ownership.title")}</strong><br>
-      ${currentSplit}<br>
-      ${t("ownership.better_split", {
-        userName: getOwnerName("user"),
-        spouseName: getOwnerName("spouse"),
-        userSharePercentage: formatInputValue(suggestion.suggested_user_share_percentage, "percent"),
-        spouseSharePercentage: formatInputValue(suggestion.suggested_spouse_share_percentage, "percent"),
-      })}<br>
+      <div class="ownership-comparison">
+        <div class="ownership-comparison-row">
+          <span class="ownership-chip">${t("ownership.input_label")}</span>
+          <span>${currentSplit}</span>
+        </div>
+        <div class="ownership-comparison-row ownership-comparison-row-highlight">
+          <span class="ownership-chip ownership-chip-accent">${t("ownership.proposal_label")}</span>
+          <span>${t("ownership.better_split", {
+            userName: getOwnerName("user"),
+            spouseName: getOwnerName("spouse"),
+            userSharePercentage: formatInputValue(suggestion.suggested_user_share_percentage, "percent"),
+            spouseSharePercentage: formatInputValue(suggestion.suggested_spouse_share_percentage, "percent"),
+          })}</span>
+        </div>
+      </div>
       ${t("ownership.tax_saving", {
         taxSaving: formatCurrency(suggestion.estimated_tax_saving),
       })}<br>
@@ -755,9 +956,13 @@ function setLoadingState() {
   summaryBox.classList.add("empty-state");
   summaryBox.innerHTML = `<span>${t("status.calculating")}</span>`;
   ownershipSuggestionBox.innerHTML = `
-    <div class="note">
-      <strong>${t("ownership.title")}</strong><br>
-      ${t("ownership.loading")}
+    <div class="note ownership-loading">
+      <div class="loading-header">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>${t("ownership.loading_title")}</strong>
+      </div>
+      <div>${t("ownership.loading")}</div>
+      <div class="loading-detail">${t("ownership.loading_detail")}</div>
     </div>
   `;
   breakdownGrid.innerHTML = "";
@@ -823,7 +1028,13 @@ async function submitForm() {
 
 yearInput.addEventListener("change", (event) => {
   setFieldLabels(event.target.value);
-  saveState();
+  municipalTaxManualOverride = false;
+  syncMunicipalTaxSelectors({
+    year: event.target.value,
+    municipality: taxMunicipalitySelect.value,
+    parish: taxParishSelect.value,
+    forceAutofill: true,
+  }).then(saveState).catch((error) => setError(error.message));
 });
 
 form.addEventListener("input", saveStateIfFormField);
@@ -841,6 +1052,34 @@ numericInputs.forEach((input) => {
   });
 });
 
+municipalTaxRateInput.addEventListener("input", () => {
+  if (!applyingMunicipalTaxRate) {
+    municipalTaxManualOverride = true;
+  }
+});
+
+taxMunicipalitySelect.addEventListener("change", () => {
+  municipalTaxManualOverride = false;
+  populateTaxParishes("");
+  syncParishFieldVisibility();
+  applyMunicipalTaxAutofill({ force: true });
+  saveState();
+});
+
+includeChurchFeeInput.addEventListener("change", () => {
+  municipalTaxManualOverride = false;
+  populateTaxParishes(taxParishSelect.value);
+  syncParishFieldVisibility();
+  applyMunicipalTaxAutofill({ force: true });
+  saveState();
+});
+
+taxParishSelect.addEventListener("change", () => {
+  municipalTaxManualOverride = false;
+  applyMunicipalTaxAutofill({ force: true });
+  saveState();
+});
+
 userShareSlider.addEventListener("input", () => {
   syncOwnershipDisplay();
   saveState();
@@ -850,6 +1089,9 @@ languageSwitch.addEventListener("change", (event) => {
   currentLanguage = event.target.value;
   localStorage.setItem(LANGUAGE_KEY, currentLanguage);
   applyStaticTranslations();
+  populateTaxMunicipalities(taxMunicipalitySelect.value);
+  populateTaxParishes(taxParishSelect.value);
+  syncParishFieldVisibility();
   refreshFormattedInputs();
   setFieldLabels(yearInput.value);
   if (lastResult) {
@@ -872,10 +1114,14 @@ form.addEventListener("submit", async (event) => {
 
 resetButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
-  restoreState();
-  submitForm().catch((error) => setError(error.message));
+  municipalTaxManualOverride = false;
+  restoreState().then(() => submitForm().catch((error) => setError(error.message)));
 });
 
-applyStaticTranslations();
-restoreState();
-submitForm().catch((error) => setError(error.message));
+async function init() {
+  applyStaticTranslations();
+  await restoreState();
+  await submitForm();
+}
+
+init().catch((error) => setError(error.message));

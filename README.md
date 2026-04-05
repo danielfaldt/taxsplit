@@ -11,6 +11,7 @@ The primary company input is the company result before corporate tax. The app th
 - One-year planning input with explicit salary-base-year mapping
 - Built-in bilingual UI with Swedish and English
 - Locale-friendly number formatting with thousands separators in the browser
+- Municipal-tax auto-fill from official Skatteverket municipality and parish tables for `2025` and `2026`
 - Salary and dividend recommendation aimed at the user's target annual net income
 - Birth-year-aware personal tax and employer contribution handling
 - Adjustable ownership split between spouses, plus an indicative ownership suggestion when a different split lowers total tax
@@ -32,6 +33,7 @@ The primary company input is the company result before corporate tax. The app th
 - `app/calculator/rules.py`: year-specific tax and dividend rule tables
 - `app/calculator/tax.py`: salary and service-income tax engine, including senior-age handling
 - `app/calculator/planner.py`: dividend-room logic, company budget modeling, scenario search, and recommendation scoring
+- `app/tax_rates.py`: municipality and parish tax-rate catalog parsing from official Skatteverket datasets
 - `app/templates/index.html`: server-rendered shell
 - `app/static/app.js`: form handling, local storage, and result rendering
 - `app/static/styles.css`: application styling
@@ -75,7 +77,7 @@ docker compose --env-file .env.dev run --rm test
 - Positive periodization fund amounts are treated as allocations; negative values are treated as reversals.
 - The spouse's external salary only affects the spouse's tax result where dividends spill into service taxation.
 - Dividends are limited to current-year post-corporate-tax profit plus any opening retained earnings entered by the user.
-- The app uses a single editable municipal tax rate for both spouses.
+- The app uses one shared municipal tax rate for the household. It can be auto-filled from municipality and parish data, then manually overridden if needed.
 - The current implementation supports planning years `2025` and `2026` only.
 
 ## Dev deployment
@@ -88,7 +90,7 @@ docker compose --env-file .env.dev run --rm test
 ## Known limitations
 
 - The app does not yet support years beyond `2026`.
-- Municipal tax is modeled as one user-provided rate rather than separate municipality, burial fee, and faith-community components.
+- Municipal tax is still shared across both spouses rather than tracked per owner with separate municipality selections.
 - The app does not yet track opening periodization fund balances, so reversals are user-controlled assumptions.
 - The app is an estimation and planning tool, not a filing engine.
 

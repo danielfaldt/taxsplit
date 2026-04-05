@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Skatteuttag is a Docker Compose based FastAPI web app for Swedish salary and dividend planning in a two-owner spouse setup with configurable ownership percentages, birth years, salary-linked dividend room, car benefit, occupational pension, and periodization-fund adjustments.
+Skatteuttag is a Docker Compose based FastAPI web app for Swedish salary and dividend planning in a two-owner spouse setup with configurable ownership percentages, birth years, salary-linked dividend room, car benefit, occupational pension, periodization-fund adjustments, and municipality/parish based tax auto-fill.
 
 ## Scope
 
@@ -36,8 +36,8 @@ docker compose --env-file .env.dev run --rm test
 - `app/calculator/rules.py`: year constants for `2025` and `2026`
 - `app/calculator/tax.py`: salary and service-income tax logic, including senior-age tax handling
 - `app/calculator/planner.py`: dividend room, scenario evaluation, company budget, pension limits, and recommendation selection
+- `app/tax_rates.py`: official Skatteverket municipality/parish tax catalog parsing for `2025` and `2026`
 - `app/templates/index.html`: page shell
-- `app/static/app.js`: client behavior and local storage
 - `app/static/app.js`: client behavior, local storage, and Swedish/English i18n
 - `app/static/styles.css`: UI styling
 
@@ -49,6 +49,7 @@ docker compose --env-file .env.dev run --rm test
 - Keep the year linkage explicit: one chosen planning year, plus derived salary-base year.
 - Treat user-entered car benefit as taxable compensation that affects tax and employer contributions but not cash net salary toward the target.
 - Treat positive `periodization_fund_change` as an allocation and negative values as reversal.
+- Municipal tax can be auto-filled from the official municipality/parish tables, but the final percentage remains user-editable.
 
 ## Critical warnings
 

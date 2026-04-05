@@ -254,6 +254,30 @@ select:focus {
   font-weight: 700;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 52px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-strong);
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.checkbox-row span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .ownership-field {
   padding: 18px;
   border: 1px solid var(--line);
@@ -367,6 +391,75 @@ button[type="submit"] {
   margin: 12px 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.ownership-loading {
+  border-left: 4px solid var(--accent);
+}
+
+.loading-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(29, 122, 99, 0.18);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-detail {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.ownership-comparison {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.ownership-comparison-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(29, 122, 99, 0.05);
+}
+
+.ownership-comparison-row-highlight {
+  background: rgba(29, 122, 99, 0.12);
+}
+
+.ownership-chip {
+  flex: 0 0 auto;
+  min-width: 56px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(24, 48, 43, 0.08);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.ownership-chip-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .results {

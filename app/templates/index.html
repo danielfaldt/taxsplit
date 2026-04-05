@@ -127,9 +127,37 @@
             </label>
 
             <label class="field">
-              <span data-i18n="field.municipal_tax_rate">Municipal tax rate</span>
+              <span data-i18n="field.tax_municipality">Municipality for tax auto-fill</span>
+              <select name="tax_municipality" id="tax-municipality">
+                <option value="">Select municipality</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span data-i18n="field.include_church_fee">Member of the Church of Sweden</span>
+              <div class="checkbox-row">
+                <input name="include_church_fee" id="include-church-fee" type="checkbox" {% if defaults.include_church_fee %}checked{% endif %}>
+                <span data-i18n="field.include_church_fee_hint">Add church fee from the selected parish.</span>
+              </div>
+            </label>
+
+            <label class="field" id="tax-parish-field">
+              <span data-i18n="field.tax_parish">Parish</span>
+              <select name="tax_parish" id="tax-parish">
+                <option value="">Select parish</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <div class="label-row">
+                <span class="label-text" data-i18n="field.municipal_tax_rate">Municipal tax rate</span>
+                <details class="info-popover">
+                  <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                  <div class="info-panel" data-i18n="info.municipal_tax_rate">The field can be auto-filled from the selected municipality. If church membership is enabled, the selected parish adds the church fee. You can still edit the rate manually.</div>
+                </details>
+              </div>
               <div class="inline-input">
-                <input name="municipal_tax_rate" type="text" inputmode="decimal" class="js-number" data-number-kind="percent" value="{{ defaults.municipal_tax_rate }}">
+                <input name="municipal_tax_rate" id="municipal-tax-rate" type="text" inputmode="decimal" class="js-number" data-number-kind="percent" value="{{ defaults.municipal_tax_rate }}">
                 <small>%</small>
               </div>
             </label>

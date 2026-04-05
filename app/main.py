@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from .calculator.planner import PlanningInput, build_ownership_analysis, plan_compensation
 from .calculator.rules import SUPPORTED_YEARS
 from .config import settings
+from .tax_rates import municipality_payload
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -49,6 +50,16 @@ async def ownership_analysis(request: Request) -> JSONResponse:
     payload = await request.json()
     try:
         result = build_ownership_analysis(payload)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return JSONResponse(result)
+
+
+@app.get("/api/municipal-tax/{year}")
+def municipal_tax(year: int) -> JSONResponse:
+    try:
+        PlanningInput.validate_year(year)
+        result = municipality_payload(year)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return JSONResponse(result)
