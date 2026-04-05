@@ -1,14 +1,25 @@
 # TODO
-- [ ] T013 - Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
-- `T001` Add support for planning years beyond `2026` once official constants and K10 rule details are available.
-- `T002` Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
-- `T003` Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
-- `T004` Track ownership as of 1 January in the planning year and distinguish that from any suggested future ownership change.
-- `T005` Add explicit support for outside owners and the related closely-held-company exceptions.
-- `T006` Add drivmedelsförmån and bostadsförmån inputs instead of only the current simplified car-benefit field.
-- `T007` Track multiple historical periodization-fund layers and original tax years instead of only one user-entered opening balance.
-- `T008` Add a richer breakdown for scenarios where dividends exceed the service-tax ceiling and spill back into capital taxation.
-- `T009` Expand the PDF export with appendix pages, signature metadata, and per-owner municipality/tax details.
-- `T010` Add future production deployment tasks, including Nginx Proxy Manager hostname configuration and production URL wiring.
-- `T011` Add export and import of planning data as JSON so scenarios can be moved between browsers and archived outside local storage.
-- `T012` Separate target-fit optimization from tax-minimization in the result view so the app can show both the closest-to-target plan and the lowest-tax plan when they differ materially.
+
+<!-- next-id: 16 -->
+
+<!-- screenshots: add [ss://...] at end of todo line; multiple separated by ; -->
+
+## Open
+
+- [ ] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
+- [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
+- [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
+- [ ] T003 · Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
+- [ ] T004 · Track ownership as of 1 January in the planning year and distinguish that from any suggested future ownership change.
+- [ ] T005 · Add explicit support for outside owners and the related closely-held-company exceptions.
+- [ ] T006 · Add drivmedelsförmån and bostadsförmån inputs instead of only the current simplified car-benefit field.
+- [ ] T007 · Track multiple historical periodization-fund layers and original tax years instead of only one user-entered opening balance.
+- [ ] T008 · Add a richer breakdown for scenarios where dividends exceed the service-tax ceiling and spill back into capital taxation.
+- [ ] T009 · Expand the PDF export with appendix pages, signature metadata, and per-owner municipality/tax details.
+- [ ] T010 · Add future production deployment tasks, including Nginx Proxy Manager hostname configuration and production URL wiring.
+- [ ] T011 · Add export and import of planning data as JSON so scenarios can be moved between browsers and archived outside local storage.
+- [ ] T012 · Separate target-fit optimization from tax-minimization in the result view so the app can show both the closest-to-target plan and the lowest-tax plan when they differ materially.
+- [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda)
+- [ ] T015 · Förklaring av hur analysen gått till beskriven i text/formel eller liknande
+
+## Closed
