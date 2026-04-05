@@ -57,6 +57,14 @@ const TRANSLATIONS = {
     "hero.persistence": "Sparas lokalt i webbläsaren",
     "inputs.title": "Inmatning",
     "inputs.subtitle": "Alla belopp anges som årsbelopp i SEK.",
+    "inputs.people_title": "Personer",
+    "inputs.people_subtitle": "Namn och födelseår används i resultatvyn och i åldersstyrda skatteregler.",
+    "inputs.goal_title": "Planeringsmål",
+    "inputs.goal_subtitle": "De här värdena styr vad rekommendationen ska optimeras mot.",
+    "inputs.base_title": "Bolag och skatteunderlag",
+    "inputs.base_subtitle": "Det här är historiska eller faktiska uppgifter som modellen bygger på.",
+    "tag.base_data": "Grunddata",
+    "tag.planning_choice": "Planeringsval",
     "field.planning_year": "Planeringsår",
     "field.target_user_net_income": "Önskad nettoinkomst för användaren efter skatt",
     "field.spouse_external_salary": "Makes/makas lön från annan arbetsgivare",
@@ -183,9 +191,9 @@ const TRANSLATIONS = {
     "ownership.tax_saving": "Beräknad minskning av total skatt: {taxSaving}.",
     "ownership.no_better_split": "Ingen bättre ägarfördelning hittades inom modellens sökyta.",
     "ownership.no_better_split_detail": "Nuvarande fördelning ser redan skatteeffektiv ut givet inmatningen och de antaganden som används här.",
-    "ownership.loading": "Analyserar om en annan ägarfördelning kan ge lägre total skatt.",
-    "ownership.loading_title": "Ägarfördelningsanalys pågår",
-    "ownership.loading_detail": "Rekommendationen visas redan. Nu jämför appen flera ägarfördelningar i bakgrunden.",
+    "ownership.loading": "Huvudrekommendationen och löne- mot utdelningsanalysen visas redan. Nu testar appen alternativa ägarfördelningar för att se om total skatt kan sänkas ytterligare.",
+    "ownership.loading_title": "Ägarfördelning jämförs i bakgrunden",
+    "ownership.loading_detail": "Det här steget påverkar bara förslaget om ägarandelar, inte huvudrekommendationen som redan visas.",
     "mix.title": "Löne- och utdelningsanalys",
     "mix.share_salary": "Andel som lön",
     "mix.share_dividend": "Andel som utdelning",
@@ -203,6 +211,9 @@ const TRANSLATIONS = {
     "mix.comparison_tax_lower": "Total skatt blir {amount} lägre.",
     "mix.comparison_net_higher": "Användarens netto blir {amount} högre.",
     "mix.comparison_net_lower": "Användarens netto blir {amount} lägre.",
+    "mix.household_title": "Hushållets maxläge",
+    "mix.household_same": "Den visade rekommendationen ligger redan vid modellens högsta hushållsnetto.",
+    "mix.household_more": "Om fokus i stället är högsta gemensamma netto når modellen {householdNet} för hushållet, vilket är {delta} högre än rekommendationen.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "error.export_failed": "PDF-exporten misslyckades.",
     "status.calculating": "Beräknar rekommendation...",
@@ -247,6 +258,14 @@ const TRANSLATIONS = {
     "hero.persistence": "Local browser persistence",
     "inputs.title": "Inputs",
     "inputs.subtitle": "All amounts are annual SEK values.",
+    "inputs.people_title": "People",
+    "inputs.people_subtitle": "Names and birth years are used in the result view and in age-sensitive tax rules.",
+    "inputs.goal_title": "Planning target",
+    "inputs.goal_subtitle": "These values steer what the recommendation should optimize toward.",
+    "inputs.base_title": "Company and tax basis",
+    "inputs.base_subtitle": "These are historical or factual values that the model builds on.",
+    "tag.base_data": "Base data",
+    "tag.planning_choice": "Planning choice",
     "field.planning_year": "Planning year",
     "field.target_user_net_income": "Desired user net income after tax",
     "field.spouse_external_salary": "Spouse salary from other employer",
@@ -373,9 +392,9 @@ const TRANSLATIONS = {
     "ownership.tax_saving": "Estimated total-tax reduction: {taxSaving}.",
     "ownership.no_better_split": "No better ownership split was found within the model search space.",
     "ownership.no_better_split_detail": "The current split already looks tax-efficient given the inputs and assumptions used here.",
-    "ownership.loading": "Analyzing whether a different ownership split can reduce total tax.",
-    "ownership.loading_title": "Ownership analysis in progress",
-    "ownership.loading_detail": "The recommendation is already shown. The app is now comparing multiple ownership splits in the background.",
+    "ownership.loading": "The main recommendation and the salary-versus-dividend analysis are already shown. The app is now testing alternative ownership splits to see whether total tax can be reduced further.",
+    "ownership.loading_title": "Ownership split is being compared in the background",
+    "ownership.loading_detail": "This step only affects the ownership suggestion, not the main recommendation that is already visible.",
     "mix.title": "Salary vs dividend analysis",
     "mix.share_salary": "Share taken as salary",
     "mix.share_dividend": "Share taken as dividend",
@@ -393,6 +412,9 @@ const TRANSLATIONS = {
     "mix.comparison_tax_lower": "Total tax becomes {amount} lower.",
     "mix.comparison_net_higher": "The user's net income becomes {amount} higher.",
     "mix.comparison_net_lower": "The user's net income becomes {amount} lower.",
+    "mix.household_title": "Household maximum",
+    "mix.household_same": "The shown recommendation already sits at the model's highest household net income.",
+    "mix.household_more": "If the focus is instead the highest combined household net income, the model reaches {householdNet}, which is {delta} higher than the recommendation.",
     "error.calculation_failed": "Calculation failed.",
     "error.export_failed": "PDF export failed.",
     "status.calculating": "Calculating recommendation...",
@@ -1033,6 +1055,13 @@ function renderCompensationMixAnalysis(result) {
     })
     .join("");
 
+  const householdNote = mix.household_max_delta > 1
+    ? t("mix.household_more", {
+      householdNet: formatCurrency(mix.household_max_net),
+      delta: formatCurrency(mix.household_max_delta),
+    })
+    : t("mix.household_same");
+
   compensationMixBox.innerHTML = `
     <div class="note mix-note">
       <strong>${t("mix.title")}</strong>
@@ -1049,6 +1078,10 @@ function renderCompensationMixAnalysis(result) {
       </div>
       <div class="mix-reasons">
         ${(mix.reasons || []).map((item) => `<div>${translateMessage(item)}</div>`).join("")}
+      </div>
+      <div class="mix-household-note">
+        <strong>${t("mix.household_title")}</strong>
+        <p>${householdNote}</p>
       </div>
       ${comparisons ? `<div class="mix-comparison-grid">${comparisons}</div>` : ""}
     </div>

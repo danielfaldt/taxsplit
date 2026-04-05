@@ -137,7 +137,8 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 18px;
-  align-items: baseline;
+  align-items: flex-start;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
@@ -152,6 +153,47 @@ body {
   font-size: 0.95rem;
 }
 
+.section-header-compact {
+  margin-bottom: 18px;
+}
+
+.section-tag-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(24, 48, 43, 0.08);
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.section-tag-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.field-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.field-column {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -161,7 +203,7 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   position: relative;
 }
 
@@ -174,7 +216,7 @@ body {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.2;
-  min-height: 3em;
+  min-height: 0;
   display: flex;
   align-items: flex-start;
 }
@@ -401,6 +443,12 @@ input[type="range"]::-moz-range-thumb {
   border-top: 1px solid var(--line);
 }
 
+.subsection-first {
+  margin-top: 24px;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .actions {
   display: flex;
   gap: 12px;
@@ -522,6 +570,24 @@ button[type="submit"] {
   content: "•";
   margin-right: 8px;
   color: var(--accent);
+}
+
+.mix-household-note {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(29, 122, 99, 0.08);
+  border: 1px solid rgba(29, 122, 99, 0.14);
+}
+
+.mix-household-note strong,
+.mix-household-note p {
+  margin: 0;
+}
+
+.mix-household-note p {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .mix-comparison-card h4,
@@ -676,6 +742,7 @@ button[type="submit"] {
   }
 
   .field-grid,
+  .field-columns,
   .metric-grid,
   .mix-stat-grid,
   .mix-comparison-grid {

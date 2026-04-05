@@ -536,6 +536,13 @@ def build_compensation_mix_analysis(
 
     lower_salary_candidates = [item for item in evaluated if item["salary"] < recommended["salary"]]
     higher_salary_candidates = [item for item in evaluated if item["salary"] > recommended["salary"]]
+    household_best = max(
+        evaluated,
+        key=lambda item: (
+            item["household_net_from_company"],
+            -item["total_tax_burden"],
+        ),
+    )
 
     comparisons: list[dict[str, Any]] = []
     if lower_salary_candidates:
@@ -580,6 +587,8 @@ def build_compensation_mix_analysis(
         "summary": summary,
         "reasons": reasons,
         "comparisons": comparisons,
+        "household_max_net": round(household_best["household_net_from_company"], 2),
+        "household_max_delta": round(household_best["household_net_from_company"] - recommended["household_net_from_company"], 2),
     }
 
 
