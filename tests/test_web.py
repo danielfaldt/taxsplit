@@ -44,6 +44,8 @@ def test_index_renders():
     assert 'id="local-tax-summary"' in response.text
     assert 'id="burial-fee-rate"' in response.text
     assert 'id="church-fee-rate"' in response.text
+    assert 'href="/static/styles.css"' in response.text
+    assert 'src="/static/app.js"' in response.text
     assert 'class="info-popover"' in response.text
     assert 'data-i18n="info.opening_retained_earnings"' in response.text
     assert 'class="field-grid base-grid"' in response.text

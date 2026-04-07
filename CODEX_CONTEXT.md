@@ -14,7 +14,8 @@ Skatteuttag is a Docker Compose based FastAPI web app for Swedish salary and div
 ## Environment
 
 - Dev port: `31847`
-- Dev URL: `http://10.20.30.100:31847`
+- Direct dev URL: `http://10.20.30.100:31847`
+- Current LAN HTTPS URL via Nginx Proxy Manager: `https://skatteuttag.lan.intend.se`
 - Runtime: Docker Compose
 - App stack: FastAPI, Jinja2, vanilla JavaScript, CSS
 
@@ -48,6 +49,7 @@ docker compose --env-file .env.dev run --rm test
 - Chat communication with the admin/developer must follow the language used by the admin/developer.
 - Use `apply_patch` for manual file edits.
 - Keep the year linkage explicit: one chosen planning year, plus derived salary-base year.
+- Keep browser-loaded static assets same-origin via `/static/...` paths so the app works correctly over both direct HTTP and proxied HTTPS.
 - The main recommendation is steerable through `optimization_profile` plus `household_min_net_income`.
 - Treat user-entered car benefit as taxable compensation that affects tax and employer contributions but not cash net salary toward the target.
 - Treat positive `periodization_fund_change` as an allocation and negative values as reversal that cannot exceed the stated opening balance.

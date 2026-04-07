@@ -65,6 +65,8 @@ Open:
 http://10.20.30.100:31847
 ```
 
+If the app is also exposed through Nginx Proxy Manager on the LAN hostname, keep `APP_BASE_URL` pointed at that HTTPS origin so generated routes such as `security.txt` and `sitemap.xml` use the public URL. Static assets are intentionally served from same-origin `/static/...` paths so the browser uses whichever scheme and host the page itself was loaded from.
+
 Use the `Actions` menu in the header to save the current form state plus the latest analysis as a JSON file, import a previously exported scenario, or export the formal PDF report.
 
 ### Run tests
@@ -97,6 +99,7 @@ docker compose --env-file .env.dev run --rm test
 - Runtime: Docker Compose
 - Web server: `uvicorn`
 - Container entrypoint: `uvicorn app.main:app --host 0.0.0.0 --port 31847`
+- `APP_BASE_URL` in `.env.dev` is currently set to `https://skatteuttag.lan.intend.se` for proxied LAN access
 
 ## Known limitations
 
