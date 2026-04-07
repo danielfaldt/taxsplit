@@ -1,11 +1,12 @@
 # TODO
 
-<!-- next-id: 17 -->
+<!-- next-id: 18 -->
 
 <!-- screenshots: add [ss://...] at end of todo line; multiple separated by ; -->
 
 ## Open
 
+- [ ] T017 · Fix the syntax error in the calculation and clarify any misunderstandings or typos. See attachment. [ss://skatteuttag/screenshots/img_1876-w8xo8k.jpeg]
 - [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
 - [ ] T003 · Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
 - [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
