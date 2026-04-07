@@ -29,6 +29,8 @@ COPY: dict[str, dict[str, str]] = {
         "label_user_name": "Användare",
         "label_spouse_name": "Make/maka",
         "label_year": "Planeringsår",
+        "label_optimization_profile": "Optimeringsprofil",
+        "label_household_floor": "Minsta hushållsnetto från bolaget",
         "label_target": "Önskad nettoinkomst efter skatt",
         "label_other_salary_income": "Annan lön utanför bolaget",
         "label_spouse_salary": "Lön från annan arbetsgivare",
@@ -85,7 +87,7 @@ COPY: dict[str, dict[str, str]] = {
         "label_dividend_tax": "Utdelningsbeskattning",
         "label_current_split": "Nuvarande fordelning",
         "label_suggested_split": "Föreslagen fördelning",
-        "label_tax_saving": "Beräknad skattebesparing",
+        "label_tax_saving": "Beräknad förändring i total skatt",
         "label_none": "Ingen fördelaktigare ägarfördelning hittades i modellens sökyta.",
         "yes": "Ja",
         "no": "Nej",
@@ -106,6 +108,8 @@ COPY: dict[str, dict[str, str]] = {
         "label_user_name": "User",
         "label_spouse_name": "Spouse",
         "label_year": "Planning year",
+        "label_optimization_profile": "Optimization profile",
+        "label_household_floor": "Minimum household net from company",
         "label_target": "Desired net income after tax",
         "label_other_salary_income": "Other salary outside the company",
         "label_spouse_salary": "Salary from other employer",
@@ -162,7 +166,7 @@ COPY: dict[str, dict[str, str]] = {
         "label_dividend_tax": "Dividend taxation",
         "label_current_split": "Current split",
         "label_suggested_split": "Suggested split",
-        "label_tax_saving": "Estimated tax saving",
+        "label_tax_saving": "Estimated change in total tax",
         "label_none": "No more favorable ownership split was found in the model search space.",
         "yes": "Yes",
         "no": "No",
@@ -176,9 +180,16 @@ MESSAGE_COPY: dict[str, dict[str, str]] = {
         "alternative.Dividend-led": "Utdelningsdrivet scenario",
         "alternative.Near state tax breakpoint": "Nära brytpunkten för statlig skatt",
         "alternative.Maximum user net": "Högsta användarnetto",
+        "alternative.Lowest total tax": "Lägsta total skatt",
+        "alternative.Highest household net": "Högsta hushållsnetto",
         "explanation.salary_uses_planning_year": "Lön som tas ut under {planningYear} beskattas med lönereglerna för {planningYear}.",
         "explanation.dividend_uses_salary_basis_year": "Utdelningsutrymmet för {planningYear} använder lönebasåret {salaryBasisYear}.",
         "explanation.recommendation_scoring": "Rekommendationen väljs först efter närhet till användarens nettomål och därefter efter lägre total skatt.",
+        "explanation.recommendation_profile_target_then_tax": "Huvudförslaget styrs först mot användarens nettomål och därefter mot lägre total skatt.",
+        "explanation.recommendation_profile_household_max": "Huvudförslaget styrs mot högsta möjliga hushållsnetto från bolaget och därefter mot lägre total skatt.",
+        "explanation.recommendation_profile_tax_min": "Huvudförslaget styrs mot lägsta total skatt men försöker samtidigt nå inmatade mål så långt det går.",
+        "explanation.household_floor_active": "Ett hushållsgolv på {householdMinNetIncome} kr netto från bolaget används som styrande villkor.",
+        "explanation.household_floor_none": "Inget särskilt hushållsgolv används i rekommendationen.",
         "note.salary_basis_year": "Planeringsår {planningYear} använder lönedata från {salaryBasisYear} för lönebaserat utdelningsutrymme.",
         "note.ownership_structure": "Modellen utgår från att {userName} äger {userSharePercentage} % och {spouseName} {spouseSharePercentage} %, och att endast {userName} tar lön från bolaget.",
         "note.old_rule_salary_requirement_met": "Det gamla lönekravet är uppfyllt eftersom bolagslönen under basåret är minst {salaryRequirement} kr.",
@@ -213,9 +224,16 @@ MESSAGE_COPY: dict[str, dict[str, str]] = {
         "alternative.Dividend-led": "Dividend-led scenario",
         "alternative.Near state tax breakpoint": "Near the state tax breakpoint",
         "alternative.Maximum user net": "Maximum user net",
+        "alternative.Lowest total tax": "Lowest total tax",
+        "alternative.Highest household net": "Highest household net",
         "explanation.salary_uses_planning_year": "Salary paid during {planningYear} is taxed using the salary-tax rules for {planningYear}.",
         "explanation.dividend_uses_salary_basis_year": "Dividend room for {planningYear} uses salary-base year {salaryBasisYear}.",
         "explanation.recommendation_scoring": "The recommendation is selected first by closeness to the user net target and then by lower total tax.",
+        "explanation.recommendation_profile_target_then_tax": "The main recommendation is driven first by the user's net-income target and then by lower total tax.",
+        "explanation.recommendation_profile_household_max": "The main recommendation is driven by the highest feasible household net from the company and then by lower total tax.",
+        "explanation.recommendation_profile_tax_min": "The main recommendation is driven by the lowest total tax while still trying to meet the entered goals as far as possible.",
+        "explanation.household_floor_active": "A household floor of {householdMinNetIncome} SEK net from the company is used as a steering condition.",
+        "explanation.household_floor_none": "No specific household floor is used in the recommendation.",
         "note.salary_basis_year": "Planning year {planningYear} uses salary data from {salaryBasisYear} for wage-linked dividend room.",
         "note.ownership_structure": "The model assumes that {userName} owns {userSharePercentage}% and {spouseName} {spouseSharePercentage}%, and that only {userName} receives salary from the company.",
         "note.old_rule_salary_requirement_met": "The old salary threshold is met because prior-year company salary is at least {salaryRequirement} SEK.",
@@ -259,6 +277,22 @@ def percentage(value: float, language: str) -> str:
     if language == "en":
         text = text.replace(",", ".")
     return f"{text} {COPY[language]['percent_suffix']}"
+
+
+def optimization_profile_label(profile: str, language: str) -> str:
+    labels = {
+        "sv": {
+            "target_then_tax": "Närmast användarens mål, sedan lägre skatt",
+            "household_max": "Högsta hushållsnetto, sedan lägre skatt",
+            "tax_min": "Lägsta skatt efter att mål nås så långt som möjligt",
+        },
+        "en": {
+            "target_then_tax": "Closest to the user's target, then lower tax",
+            "household_max": "Highest household net, then lower tax",
+            "tax_min": "Lowest tax after goals are met as far as possible",
+        },
+    }
+    return labels[language].get(profile, profile)
 
 
 def paragraph(text: str, style: ParagraphStyle) -> Paragraph:
@@ -409,7 +443,9 @@ def generate_pdf_report(payload: dict[str, Any], language: str = "sv") -> bytes:
                 (copy["label_user_name"], user_name),
                 (copy["label_spouse_name"], spouse_name),
                 (copy["label_year"], str(input_data["year"])),
+                (copy["label_optimization_profile"], optimization_profile_label(input_data["optimization_profile"], language)),
                 (copy["label_target"], money(input_data["target_user_net_income"], language)),
+                (copy["label_household_floor"], money(input_data["household_min_net_income"], language)),
                 (copy["label_other_salary_income"], money(input_data["user_other_salary_income"], language)),
                 (copy["label_spouse_salary"], money(input_data["spouse_external_salary"], language)),
                 (copy["label_company_result"], money(input_data["company_result_before_corporate_tax"], language)),

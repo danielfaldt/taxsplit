@@ -58,6 +58,40 @@ def test_plan_compensation_returns_share_percentages():
     assert result["ownership_suggestion"] is None
 
 
+def test_plan_compensation_can_optimize_for_household_maximum():
+    base_input = PlanningInput(
+        year=2026,
+        target_user_net_income=650_000,
+        company_result_before_corporate_tax=1_600_000,
+        spouse_external_salary=900_000,
+        opening_retained_earnings=0,
+        prior_year_company_cash_salaries=900_000,
+        prior_year_user_company_salary=900_000,
+    )
+
+    target_result = plan_compensation(base_input.model_dump(), include_ownership_analysis=False)
+    household_result = plan_compensation(
+        base_input.model_copy(update={"optimization_profile": "household_max"}).model_dump(),
+        include_ownership_analysis=False,
+    )
+
+    assert household_result["input"]["optimization_profile"] == "household_max"
+    assert household_result["recommended"]["household_net_from_company"] >= target_result["recommended"]["household_net_from_company"]
+
+
+def test_plan_compensation_tracks_household_floor_shortfall():
+    result = plan_compensation(
+        PlanningInput(
+            year=2026,
+            household_min_net_income=2_000_000,
+        ).model_dump(),
+        include_ownership_analysis=False,
+    )
+
+    assert result["recommended"]["household_shortfall_to_floor"] > 0
+    assert result["input"]["household_min_net_income"] == 2_000_000
+
+
 def test_build_ownership_analysis_can_suggest_better_ownership_split():
     result = build_ownership_analysis(
         PlanningInput(

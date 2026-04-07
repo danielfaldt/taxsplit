@@ -114,6 +114,12 @@
                     {% endfor %}
                   </select>
                 </label>
+
+                <label class="field">
+                  <span data-i18n="field.household_min_net_income">Minimum household net from the company</span>
+                  <input name="household_min_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.household_min_net_income if defaults.household_min_net_income is defined else 0 }}">
+                  <small data-i18n="field.household_min_net_income_hint">Use 0 if you do not want to force a household floor in the recommendation.</small>
+                </label>
               </div>
 
               <div class="field-column">
@@ -121,6 +127,27 @@
                   <span id="target-net-income-label" data-i18n="field.target_user_net_income">Desired user net income after tax</span>
                   <input name="target_user_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.target_user_net_income }}">
                 </label>
+
+                <fieldset class="field choice-field">
+                  <legend data-i18n="field.optimization_profile">How the main recommendation should be optimized</legend>
+                  <div class="choice-grid">
+                    <label class="choice-card">
+                      <input type="radio" name="optimization_profile" value="target_then_tax" {% if defaults.optimization_profile == "target_then_tax" %}checked{% endif %}>
+                      <span class="choice-title" data-i18n="optimization.target_then_tax.title">Closest to the user's target</span>
+                      <span class="choice-description" data-i18n="optimization.target_then_tax.description">Prioritize the user's requested net income, then prefer lower total tax.</span>
+                    </label>
+                    <label class="choice-card">
+                      <input type="radio" name="optimization_profile" value="household_max" {% if defaults.optimization_profile == "household_max" %}checked{% endif %}>
+                      <span class="choice-title" data-i18n="optimization.household_max.title">Maximize household net</span>
+                      <span class="choice-description" data-i18n="optimization.household_max.description">Prioritize the highest combined net income from the company for the household.</span>
+                    </label>
+                    <label class="choice-card">
+                      <input type="radio" name="optimization_profile" value="tax_min" {% if defaults.optimization_profile == "tax_min" %}checked{% endif %}>
+                      <span class="choice-title" data-i18n="optimization.tax_min.title">Minimize total tax</span>
+                      <span class="choice-description" data-i18n="optimization.tax_min.description">Prefer the lowest total tax once the entered goals are met as far as possible.</span>
+                    </label>
+                  </div>
+                </fieldset>
               </div>
             </div>
           </div>
@@ -373,7 +400,7 @@
           <div class="card result-card">
             <div class="section-header">
               <h2 data-i18n="recommended.title">Recommended plan</h2>
-              <p data-i18n="recommended.subtitle">Closest to the target, then biased toward lower total tax.</p>
+              <p id="recommended-subtitle" data-i18n="recommended.subtitle">Closest to the target, then biased toward lower total tax.</p>
             </div>
             <div id="recommendation-summary" class="metric-grid empty-state">
               <span data-i18n="recommended.empty">Submit the form to generate a recommendation.</span>

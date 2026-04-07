@@ -24,6 +24,8 @@ def test_index_renders():
     assert 'id="spouse-birth-year-label"' in response.text
     assert 'name="user_birth_year" type="number"' in response.text
     assert 'name="spouse_birth_year" type="number"' in response.text
+    assert 'name="household_min_net_income"' in response.text
+    assert 'name="optimization_profile"' in response.text
     assert 'name="user_other_salary_income"' in response.text
     assert 'name="planned_user_pension"' in response.text
     assert 'name="car_benefit_is_pensionable"' in response.text
@@ -105,6 +107,13 @@ def test_client_script_persists_form_state_on_input():
     assert "ownership.proposal_label" in body
     assert "ownership.optimized_for_household" in body
     assert "ownership.household_net_gain" in body
+    assert "field.household_min_net_income" in body
+    assert "field.optimization_profile" in body
+    assert "optimization.household_max.title" in body
+    assert "recommended.final_summary_pending" in body
+    assert "analysis.recommendation_method" in body
+    assert "analysis.constraint_user_target" in body
+    assert "recommended.subtitle_household_max" in body
     assert "renderCompensationMixAnalysis" in body
     assert "mix.title" in body
     assert "mix.summary_mixed" in body

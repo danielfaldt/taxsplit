@@ -16,6 +16,7 @@ const submitButton = form.querySelector('button[type="submit"]');
 const metaDescription = document.querySelector("#meta-description");
 const pageTitle = document.querySelector("#page-title");
 const appNameElement = document.querySelector("#app-name");
+const recommendedSubtitle = document.querySelector("#recommended-subtitle");
 const compensationMixBox = document.querySelector("#compensation-mix-analysis");
 const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
 const userDisplayNameInput = document.querySelector("#user-display-name");
@@ -70,6 +71,9 @@ const TRANSLATIONS = {
     "tag.planning_choice": "Planeringsval",
     "field.planning_year": "Planeringsår",
     "field.target_user_net_income": "Önskad nettoinkomst för användaren efter skatt",
+    "field.household_min_net_income": "Minsta hushållsnetto från bolaget",
+    "field.household_min_net_income_hint": "Ange 0 om rekommendationen inte ska tvingas upp till en viss hushållsnivå.",
+    "field.optimization_profile": "Så ska huvudförslaget optimeras",
     "field.spouse_external_salary": "Makes/makas lön från annan arbetsgivare",
     "field.company_result_before_corporate_tax": "Bolagets resultat före bolagsskatt",
     "field.opening_retained_earnings": "Ingående fria vinstmedel tillgängliga för utdelning",
@@ -122,13 +126,23 @@ const TRANSLATIONS = {
     "inputs.helper": "Appen sparar formulärvärden i webbläsarens lokala lagring och återställer dem vid omladdning.",
     "recommended.title": "Rekommenderad plan",
     "recommended.subtitle": "Närmast målet, därefter prioritet på lägre total skatt.",
+    "recommended.subtitle_target_then_tax": "Optimerad för att komma nära användarens mål, därefter lägre total skatt.",
+    "recommended.subtitle_household_max": "Optimerad för hushållets högsta netto från bolaget, därefter lägre total skatt.",
+    "recommended.subtitle_tax_min": "Optimerad för lägsta total skatt efter att satta mål nås så långt som möjligt.",
     "recommended.empty": "Skicka formuläret för att få en rekommendation.",
     "recommended.final_title": "Slutligt förslag",
+    "recommended.final_summary_pending": "Ta ut {salary} i lön och {dividend} i total utdelning. Aktiefördelningen visas tills vidare som {userName} {userShare} % / {spouseName} {spouseShare} % medan bakgrundsanalysen räknar klart.",
     "recommended.final_summary_current": "Ta ut {salary} i lön, {dividend} i total utdelning och behåll aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
     "recommended.final_summary_suggested": "Ta ut {salary} i lön, {dividend} i total utdelning och överväg aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
-    "recommended.final_status_pending": "Ägarfördelningen verifieras fortfarande i bakgrunden.",
+    "recommended.final_status_pending": "Slutligt förslag är fortfarande preliminärt. Lön och utdelning visas redan, men aktiefördelningen kan ändras när ägaranalysen är färdig.",
     "recommended.final_status_same": "Det här är modellens bästa helhetsförslag givet nuvarande indata.",
     "recommended.final_status_better": "Modellen hittar ett bättre hushållsutfall med den föreslagna aktiefördelningen än med nuvarande fördelning.",
+    "optimization.target_then_tax.title": "Närmast användarens mål",
+    "optimization.target_then_tax.description": "Prioritera användarens önskade netto, välj sedan lägre total skatt.",
+    "optimization.household_max.title": "Maximera hushållets netto",
+    "optimization.household_max.description": "Prioritera högsta gemensamma netto från bolaget för hushållet.",
+    "optimization.tax_min.title": "Minimera total skatt",
+    "optimization.tax_min.description": "Prioritera lägsta total skatt när inmatade mål går att nå eller komma nära.",
     "breakdown.title": "Nedbrytning",
     "breakdown.subtitle": "Bolagets kassaflöde, löneskatt, utdelningsskatt och utdelningsutrymme.",
     "alternatives.title": "Alternativa scenarier",
@@ -189,6 +203,10 @@ const TRANSLATIONS = {
     "alternative.near_state_breakpoint_desc": "Lön pressad nära brytpunkten innan mer utdelning används.",
     "alternative.maximum_user_net": "Maximal användarnetto",
     "alternative.maximum_user_net_desc": "Högsta netto för användaren som modellen hittar inom bolagets budget.",
+    "alternative.lowest_total_tax": "Lägsta total skatt",
+    "alternative.lowest_total_tax_desc": "Det scenario som ger lägst total skatt inom samma bolagsbudget.",
+    "alternative.highest_household_net": "Högsta hushållsnetto",
+    "alternative.highest_household_net_desc": "Det scenario som ger högst gemensamt netto från bolaget för hushållet.",
     "scenario.salary": "Lön",
     "scenario.total_dividend": "Total utdelning",
     "scenario.user_net": "Användarens netto",
@@ -213,8 +231,8 @@ const TRANSLATIONS = {
     "ownership.no_better_split": "Ingen bättre ägarfördelning hittades inom modellens sökyta.",
     "ownership.no_better_split_detail": "Nuvarande fördelning ser redan stark ut utifrån hushållets netto och total skatt givet inmatningen och de antaganden som används här.",
     "ownership.loading": "Huvudrekommendationen och löne- mot utdelningsanalysen visas redan. Nu testar appen alternativa ägarfördelningar för att se om hushållets netto från bolaget kan förbättras ytterligare.",
-    "ownership.loading_title": "Ägarfördelning jämförs i bakgrunden",
-    "ownership.loading_detail": "Det här steget påverkar bara förslaget om ägarandelar, inte huvudrekommendationen som redan visas.",
+    "ownership.loading_title": "Ägaranalysen räknas färdigt i bakgrunden",
+    "ownership.loading_detail": "Det här steget kan fortfarande påverka slutligt förslag genom att föreslå en annan aktiefördelning, men ändrar inte huvudberäkningen för lön och utdelning som redan visas.",
     "mix.title": "Löne- och utdelningsanalys",
     "mix.share_salary": "Andel som lön",
     "mix.share_dividend": "Andel som utdelning",
@@ -235,6 +253,24 @@ const TRANSLATIONS = {
     "mix.household_title": "Hushållets maxläge",
     "mix.household_same": "Den visade rekommendationen ligger redan vid modellens högsta hushållsnetto.",
     "mix.household_more": "Om fokus i stället är högsta gemensamma netto når modellen {householdNet} för hushållet, vilket är {delta} högre än rekommendationen.",
+    "analysis.how_title": "Så lästes den fram",
+    "analysis.controls_title": "Styrdes av",
+    "analysis.constraints_title": "Begränsningar just nu",
+    "analysis.recommendation_method": "Appen sökte igenom möjliga kombinationer av lön och utdelning inom bolagets budget och valde sedan bästa scenario enligt vald optimeringsprofil.",
+    "analysis.mix_method": "Appen jämförde närliggande scenarier runt huvudförslaget för att visa vad mer lön eller mer utdelning gör med netto och skatt.",
+    "analysis.ownership_method": "Appen räknade om huvudförslaget för flera möjliga ägarandelar och jämförde hushållsnetto, total skatt och målträff.",
+    "analysis.alternatives_method": "De här scenarierna är nyttiga jämförelsepunkter inom samma bolagsbudget och regelverk som huvudförslaget.",
+    "analysis.control_profile_target_then_tax": "Profil: närmast användarens nettomål, sedan lägre total skatt.",
+    "analysis.control_profile_household_max": "Profil: högsta hushållsnetto från bolaget, sedan lägre total skatt.",
+    "analysis.control_profile_tax_min": "Profil: lägsta total skatt efter att satta mål nås så långt som möjligt.",
+    "analysis.control_household_floor_active": "Hushållsgolvet är satt till minst {amount} netto från bolaget.",
+    "analysis.control_household_floor_none": "Inget särskilt hushållsgolv är satt.",
+    "analysis.constraint_none": "Inga tydliga modellbegränsningar slog i för det visade huvudförslaget.",
+    "analysis.constraint_user_target": "Användarens nettomål nås inte fullt ut. Det saknas cirka {amount}.",
+    "analysis.constraint_household_floor": "Det angivna hushållsgolvet nås inte fullt ut. Det saknas cirka {amount}.",
+    "analysis.constraint_dividend_cap": "Förslaget använder i praktiken hela den tillgängliga utdelningslikviden.",
+    "analysis.constraint_salary_cap": "Förslaget ligger vid modellens högsta möjliga kontanta lön inom nuvarande bolagsbudget.",
+    "analysis.constraint_household_not_max": "Det finns ett annat scenario i modellen som ger högre hushållsnetto, men huvudförslaget följer den valda optimeringsprofilen.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "error.export_failed": "PDF-exporten misslyckades.",
     "status.calculating": "Beräknar rekommendation...",
@@ -264,7 +300,12 @@ const TRANSLATIONS = {
     "assumption.periodization_fund": "Positiv periodiseringsfond minskar årets beskattningsbara resultat. Negativt värde tolkas som återföring och får inte överstiga angivet ingående fondsaldo.",
     "explanation.salary_uses_planning_year": "Lön som tas ut under {planningYear} beskattas med lönereglerna för {planningYear}.",
     "explanation.dividend_uses_salary_basis_year": "Utdelningsutrymmet för {planningYear} använder lönebasåret {salaryBasisYear}.",
-    "explanation.recommendation_scoring": "Rekommendationen minimerar först avståndet till användarens nettomål och föredrar därefter lägre total skatt."
+    "explanation.recommendation_scoring": "Rekommendationen minimerar först avståndet till användarens nettomål och föredrar därefter lägre total skatt.",
+    "explanation.recommendation_profile_target_then_tax": "Huvudförslaget är styrt mot användarens nettomål först och lägre total skatt därefter.",
+    "explanation.recommendation_profile_household_max": "Huvudförslaget är styrt mot högsta möjliga hushållsnetto från bolaget och lägre total skatt därefter.",
+    "explanation.recommendation_profile_tax_min": "Huvudförslaget är styrt mot lägsta total skatt, men försöker samtidigt nå inmatade mål så långt det går.",
+    "explanation.household_floor_active": "Ett hushållsgolv på {householdMinNetIncome} kr netto från bolaget används som styrande villkor i rekommendationen.",
+    "explanation.household_floor_none": "Inget särskilt hushållsgolv används i rekommendationen."
   },
   en: {
     "brand.app_name": "TaxSplit",
@@ -289,6 +330,9 @@ const TRANSLATIONS = {
     "tag.planning_choice": "Planning choice",
     "field.planning_year": "Planning year",
     "field.target_user_net_income": "Desired user net income after tax",
+    "field.household_min_net_income": "Minimum household net from the company",
+    "field.household_min_net_income_hint": "Use 0 if you do not want the recommendation to respect a household floor.",
+    "field.optimization_profile": "How the main recommendation should be optimized",
     "field.spouse_external_salary": "Spouse salary from other employer",
     "field.company_result_before_corporate_tax": "Company result before corporate tax",
     "field.opening_retained_earnings": "Opening retained earnings available for dividends",
@@ -341,13 +385,23 @@ const TRANSLATIONS = {
     "inputs.helper": "The app stores your form values in local browser storage and restores them on reload.",
     "recommended.title": "Recommended plan",
     "recommended.subtitle": "Closest to the target, then biased toward lower total tax.",
+    "recommended.subtitle_target_then_tax": "Optimized to stay close to the user's target, then toward lower total tax.",
+    "recommended.subtitle_household_max": "Optimized for the household's highest net income from the company, then toward lower total tax.",
+    "recommended.subtitle_tax_min": "Optimized for the lowest total tax after the entered goals are met as far as possible.",
     "recommended.empty": "Submit the form to generate a recommendation.",
     "recommended.final_title": "Final recommendation",
+    "recommended.final_summary_pending": "Take {salary} as salary and {dividend} as total dividend. The ownership split is shown for now as {userName} {userShare}% / {spouseName} {spouseShare}% while the background ownership analysis finishes.",
     "recommended.final_summary_current": "Take {salary} as salary, {dividend} as total dividend, and keep the ownership split at {userName} {userShare}% / {spouseName} {spouseShare}%.",
     "recommended.final_summary_suggested": "Take {salary} as salary, {dividend} as total dividend, and consider the ownership split {userName} {userShare}% / {spouseName} {spouseShare}%.",
-    "recommended.final_status_pending": "The ownership split is still being verified in the background.",
+    "recommended.final_status_pending": "The final recommendation is still preliminary. Salary and dividend are already shown, but the ownership split may still change when the ownership analysis finishes.",
     "recommended.final_status_same": "This is the model's best overall proposal based on the current inputs.",
     "recommended.final_status_better": "The model finds a better household outcome with the suggested ownership split than with the current split.",
+    "optimization.target_then_tax.title": "Closest to the user's target",
+    "optimization.target_then_tax.description": "Prioritize the user's requested net income, then prefer lower total tax.",
+    "optimization.household_max.title": "Maximize household net",
+    "optimization.household_max.description": "Prioritize the highest combined net income from the company for the household.",
+    "optimization.tax_min.title": "Minimize total tax",
+    "optimization.tax_min.description": "Prioritize the lowest total tax when the entered goals can be met or approached.",
     "breakdown.title": "Breakdown",
     "breakdown.subtitle": "Company cash flow, salary tax, dividend tax, and dividend room.",
     "alternatives.title": "Alternative scenarios",
@@ -408,6 +462,10 @@ const TRANSLATIONS = {
     "alternative.near_state_breakpoint_desc": "Salary pushed close to the state income tax breakpoint before dividends.",
     "alternative.maximum_user_net": "Maximum user net",
     "alternative.maximum_user_net_desc": "Highest user after-tax income the model can find within the company budget.",
+    "alternative.lowest_total_tax": "Lowest total tax",
+    "alternative.lowest_total_tax_desc": "The scenario that gives the lowest total tax within the same company budget.",
+    "alternative.highest_household_net": "Highest household net",
+    "alternative.highest_household_net_desc": "The scenario that gives the highest combined net income from the company for the household.",
     "scenario.salary": "Salary",
     "scenario.total_dividend": "Total dividend",
     "scenario.user_net": "User net",
@@ -432,8 +490,8 @@ const TRANSLATIONS = {
     "ownership.no_better_split": "No better ownership split was found within the model search space.",
     "ownership.no_better_split_detail": "The current split already looks strong on household net and total tax given the inputs and assumptions used here.",
     "ownership.loading": "The main recommendation and the salary-versus-dividend analysis are already shown. The app is now testing alternative ownership splits to see whether household net from the company can be improved further.",
-    "ownership.loading_title": "Ownership split is being compared in the background",
-    "ownership.loading_detail": "This step only affects the ownership suggestion, not the main recommendation that is already visible.",
+    "ownership.loading_title": "The ownership analysis is still running in the background",
+    "ownership.loading_detail": "This step can still change the final recommendation by suggesting a different ownership split, but it does not change the salary and dividend calculation that is already visible.",
     "mix.title": "Salary vs dividend analysis",
     "mix.share_salary": "Share taken as salary",
     "mix.share_dividend": "Share taken as dividend",
@@ -454,6 +512,24 @@ const TRANSLATIONS = {
     "mix.household_title": "Household maximum",
     "mix.household_same": "The shown recommendation already sits at the model's highest household net income.",
     "mix.household_more": "If the focus is instead the highest combined household net income, the model reaches {householdNet}, which is {delta} higher than the recommendation.",
+    "analysis.how_title": "How it was derived",
+    "analysis.controls_title": "Driven by",
+    "analysis.constraints_title": "Current limits",
+    "analysis.recommendation_method": "The app searched across feasible salary and dividend combinations within the company budget and then selected the best scenario under the chosen optimization profile.",
+    "analysis.mix_method": "The app compared nearby scenarios around the main recommendation to show what more salary or more dividend does to net income and tax.",
+    "analysis.ownership_method": "The app recalculated the main recommendation for multiple ownership splits and compared household net, total tax, and target fit.",
+    "analysis.alternatives_method": "These scenarios are useful comparison points within the same company budget and rule set as the main recommendation.",
+    "analysis.control_profile_target_then_tax": "Profile: closest to the user's net-income target, then lower total tax.",
+    "analysis.control_profile_household_max": "Profile: highest household net from the company, then lower total tax.",
+    "analysis.control_profile_tax_min": "Profile: lowest total tax after the entered goals are met as far as possible.",
+    "analysis.control_household_floor_active": "The household floor is set to at least {amount} net from the company.",
+    "analysis.control_household_floor_none": "No specific household floor is set.",
+    "analysis.constraint_none": "No clear model constraints are currently binding for the displayed main recommendation.",
+    "analysis.constraint_user_target": "The user's net-income target is not fully reached. The gap is about {amount}.",
+    "analysis.constraint_household_floor": "The entered household floor is not fully reached. The gap is about {amount}.",
+    "analysis.constraint_dividend_cap": "The proposal uses essentially all available dividend cash.",
+    "analysis.constraint_salary_cap": "The proposal sits at the model's highest feasible cash salary within the current company budget.",
+    "analysis.constraint_household_not_max": "Another scenario in the model gives a higher household net outcome, but the main recommendation follows the chosen optimization profile.",
     "error.calculation_failed": "Calculation failed.",
     "error.export_failed": "PDF export failed.",
     "status.calculating": "Calculating recommendation...",
@@ -461,6 +537,11 @@ const TRANSLATIONS = {
     "rule.main": "Main rule",
     "rule.simplification": "Simplification rule",
     "rule.new_combined": "2026 combined rule",
+    "explanation.recommendation_profile_target_then_tax": "The main recommendation is driven first by the user's net-income target and then by lower total tax.",
+    "explanation.recommendation_profile_household_max": "The main recommendation is driven by the highest feasible household net from the company and then by lower total tax.",
+    "explanation.recommendation_profile_tax_min": "The main recommendation is driven by the lowest total tax, while still trying to meet the entered goals as far as possible.",
+    "explanation.household_floor_active": "A household floor of {householdMinNetIncome} SEK net from the company is used as a steering condition in the recommendation.",
+    "explanation.household_floor_none": "No specific household floor is used in the recommendation.",
     "note.salary_basis_year": "Planning year {planningYear} uses salary data from {salaryBasisYear} for the wage-linked dividend room.",
     "note.ownership_structure": "The model uses an ownership split where {userName} owns {userSharePercentage}% and {spouseName} owns {spouseSharePercentage}%, and only {userName} receives salary from the company.",
     "note.ownership_suggestion_scope": "The ownership suggestion is an indicative tax comparison and assumes saved dividend room and cost basis follow the new economic split.",
@@ -740,6 +821,13 @@ function formToObject() {
       return;
     }
 
+    if (field.type === "radio") {
+      if (field.checked) {
+        values[field.name] = field.value;
+      }
+      return;
+    }
+
     const kind = field.dataset?.numberKind;
     if (!kind) {
       values[field.name] = String(field.value || "").trim();
@@ -835,8 +923,18 @@ function syncOwnershipDisplay() {
 }
 
 function setFieldValue(field, value) {
+  if (field && typeof field.length === "number" && field.length > 0 && field[0]?.type === "radio") {
+    Array.from(field).forEach((option) => {
+      option.checked = option.value === value;
+    });
+    return;
+  }
   if (field.type === "checkbox") {
     field.checked = Boolean(value);
+    return;
+  }
+  if (field.type === "radio") {
+    field.checked = field.value === value;
     return;
   }
   field.value = value ?? "";
@@ -1034,6 +1132,81 @@ function metric(label, value, subvalue) {
   `;
 }
 
+function currentOptimizationProfile(result = null) {
+  return result?.input?.optimization_profile || form.elements.namedItem("optimization_profile")?.value || "target_then_tax";
+}
+
+function recommendationSubtitleKey(profile) {
+  if (profile === "household_max") return "recommended.subtitle_household_max";
+  if (profile === "tax_min") return "recommended.subtitle_tax_min";
+  return "recommended.subtitle_target_then_tax";
+}
+
+function recommendationControlTexts(result) {
+  const profileKey = {
+    target_then_tax: "analysis.control_profile_target_then_tax",
+    household_max: "analysis.control_profile_household_max",
+    tax_min: "analysis.control_profile_tax_min",
+  }[currentOptimizationProfile(result)] || "analysis.control_profile_target_then_tax";
+
+  const controls = [t(profileKey)];
+  const householdFloor = Number(result?.input?.household_min_net_income || 0);
+  controls.push(
+    householdFloor > 0
+      ? t("analysis.control_household_floor_active", { amount: formatCurrency(householdFloor) })
+      : t("analysis.control_household_floor_none"),
+  );
+  return controls;
+}
+
+function recommendationConstraintTexts(result) {
+  const constraints = [];
+  const recommendation = result.recommended;
+  const householdFloor = Number(result.input.household_min_net_income || 0);
+  const maxFeasibleSalary = Number(result.meta.max_feasible_salary || 0);
+
+  if (recommendation.shortfall_to_target > 1) {
+    constraints.push(t("analysis.constraint_user_target", { amount: formatCurrency(recommendation.shortfall_to_target) }));
+  }
+  if (householdFloor > recommendation.household_net_from_company + 1) {
+    constraints.push(
+      t("analysis.constraint_household_floor", {
+        amount: formatCurrency(householdFloor - recommendation.household_net_from_company),
+      }),
+    );
+  }
+  if (recommendation.company.available_dividend_cash > 0 && recommendation.total_dividend >= recommendation.company.available_dividend_cash - 100) {
+    constraints.push(t("analysis.constraint_dividend_cap"));
+  }
+  if (maxFeasibleSalary > 0 && recommendation.salary >= maxFeasibleSalary - 100) {
+    constraints.push(t("analysis.constraint_salary_cap"));
+  }
+  if ((result.compensation_mix?.household_max_delta || 0) > 1) {
+    constraints.push(t("analysis.constraint_household_not_max"));
+  }
+
+  return constraints.length ? constraints : [t("analysis.constraint_none")];
+}
+
+function analysisMetaBlock({ method, controls, constraints = [] }) {
+  return `
+    <div class="analysis-meta">
+      <div class="analysis-meta-row">
+        <strong>${t("analysis.how_title")}</strong>
+        <span>${method}</span>
+      </div>
+      <div class="analysis-meta-row">
+        <strong>${t("analysis.controls_title")}</strong>
+        <span>${controls.join(" ")}</span>
+      </div>
+      <div class="analysis-meta-row">
+        <strong>${t("analysis.constraints_title")}</strong>
+        <span>${constraints.join(" ")}</span>
+      </div>
+    </div>
+  `;
+}
+
 function translateRule(label) {
   if (label === "Main rule") return t("rule.main");
   if (label === "Simplification rule") return t("rule.simplification");
@@ -1072,6 +1245,7 @@ function translateMessage(item) {
 
 function renderMetrics(result) {
   const recommendation = result.recommended;
+  recommendedSubtitle.textContent = t(recommendationSubtitleKey(currentOptimizationProfile(result)));
   summaryBox.classList.remove("empty-state");
   summaryBox.innerHTML = `
     ${metric(t("metric.recommended_salary"), formatCurrency(recommendation.salary), t("metric.recommended_salary_sub"))}
@@ -1086,12 +1260,20 @@ function renderMetrics(result) {
 function renderFinalPlan(result) {
   const recommendation = result.recommended;
   const suggestion = result.ownership_suggestion;
+  const ownershipPending = result.ownership_suggestion === undefined;
   const userShare = suggestion ? suggestion.suggested_user_share_percentage : result.input.user_share_percentage;
   const spouseShare = suggestion ? suggestion.suggested_spouse_share_percentage : (100 - result.input.user_share_percentage);
-  const summaryKey = suggestion ? "recommended.final_summary_suggested" : "recommended.final_summary_current";
+  const summaryKey = ownershipPending
+    ? "recommended.final_summary_pending"
+    : (suggestion ? "recommended.final_summary_suggested" : "recommended.final_summary_current");
   const statusKey = suggestion
     ? "recommended.final_status_better"
-    : (result.ownership_suggestion === undefined ? "recommended.final_status_pending" : "recommended.final_status_same");
+    : (ownershipPending ? "recommended.final_status_pending" : "recommended.final_status_same");
+  const analysisMeta = analysisMetaBlock({
+    method: t("analysis.recommendation_method"),
+    controls: recommendationControlTexts(result),
+    constraints: recommendationConstraintTexts(result),
+  });
 
   finalPlanBox.innerHTML = `
     <div class="note final-plan-note">
@@ -1105,6 +1287,7 @@ function renderFinalPlan(result) {
         spouseShare: formatInputValue(spouseShare, "percent"),
       })}</p>
       <div class="final-plan-status">${t(statusKey)}</div>
+      ${analysisMeta}
     </div>
   `;
 }
@@ -1154,6 +1337,11 @@ function renderCompensationMixAnalysis(result) {
     <div class="note mix-note">
       <strong>${t("mix.title")}</strong>
       <p class="mix-summary">${translateMessage(mix.summary)}</p>
+      ${analysisMetaBlock({
+        method: t("analysis.mix_method"),
+        controls: recommendationControlTexts(result),
+        constraints: [(mix.household_max_delta || 0) > 1 ? t("analysis.constraint_household_not_max") : t("analysis.constraint_none")],
+      })}
       <div class="mix-stat-grid">
         <div class="mix-stat">
           <span>${t("mix.share_salary")}</span>
@@ -1195,6 +1383,11 @@ function renderOwnershipSuggestion(result) {
         </div>
         ${t("ownership.no_better_split")}<br>
         ${t("ownership.no_better_split_detail")}
+        ${analysisMetaBlock({
+          method: t("analysis.ownership_method"),
+          controls: [t("ownership.optimized_for_household")],
+          constraints: [t("analysis.constraint_none")],
+        })}
       </div>
     `;
     return;
@@ -1235,6 +1428,11 @@ function renderOwnershipSuggestion(result) {
       })}<br>
       ${taxImpactText}<br>
       ${translateMessage(suggestion.note)}
+      ${analysisMetaBlock({
+        method: t("analysis.ownership_method"),
+        controls: [t("ownership.optimized_for_household")],
+        constraints: [taxImpactText],
+      })}
     </div>
   `;
 }
@@ -1305,14 +1503,18 @@ function renderAlternatives(result) {
     "Dividend-led": "alternative.dividend_led",
     "Near state tax breakpoint": "alternative.near_state_breakpoint",
     "Maximum user net": "alternative.maximum_user_net",
+    "Lowest total tax": "alternative.lowest_total_tax",
+    "Highest household net": "alternative.highest_household_net",
   };
   const descriptionMap = {
     "Lower salary focus with heavier reliance on dividends.": "alternative.dividend_led_desc",
     "Salary pushed close to the state income tax breakpoint before dividends.": "alternative.near_state_breakpoint_desc",
     "Highest user after-tax income the model can find within the current company budget.": "alternative.maximum_user_net_desc",
+    "Lowest total tax burden that the model can find within the current company budget.": "alternative.lowest_total_tax_desc",
+    "Highest combined household net from the company that the model can find within the current company budget.": "alternative.highest_household_net_desc",
   };
 
-  alternativesBox.innerHTML = result.alternatives
+  const cards = result.alternatives
     .map((entry) => {
       const scenario = entry.scenario;
       return `
@@ -1329,6 +1531,16 @@ function renderAlternatives(result) {
       `;
     })
     .join("");
+
+  alternativesBox.innerHTML = `
+    <div class="note">
+      <strong>${t("analysis.how_title")}</strong><br>
+      ${t("analysis.alternatives_method")}<br><br>
+      <strong>${t("analysis.controls_title")}</strong><br>
+      ${recommendationControlTexts(result).join(" ")}
+    </div>
+    ${cards}
+  `;
 }
 
 function renderAssumptions(result) {
@@ -1350,7 +1562,12 @@ function clearError() {
   errorBox.classList.add("hidden");
 }
 
+function syncRecommendedSubtitle(result = null) {
+  recommendedSubtitle.textContent = t(recommendationSubtitleKey(currentOptimizationProfile(result)));
+}
+
 function setLoadingState() {
+  syncRecommendedSubtitle();
   summaryBox.classList.add("empty-state");
   summaryBox.innerHTML = `<span>${t("status.calculating")}</span>`;
   finalPlanBox.innerHTML = "";
@@ -1552,6 +1769,7 @@ languageSwitch.addEventListener("change", (event) => {
   currentLanguage = event.target.value;
   localStorage.setItem(LANGUAGE_KEY, currentLanguage);
   applyStaticTranslations();
+  syncRecommendedSubtitle(lastResult);
   populateTaxMunicipalities(taxMunicipalitySelect.value);
   populateTaxParishes(taxParishSelect.value);
   syncParishFieldVisibility();
@@ -1565,6 +1783,12 @@ languageSwitch.addEventListener("change", (event) => {
     renderBreakdown(lastResult);
     renderAlternatives(lastResult);
     renderAssumptions(lastResult);
+  }
+});
+
+form.addEventListener("change", (event) => {
+  if (event.target?.name === "optimization_profile") {
+    syncRecommendedSubtitle();
   }
 });
 
@@ -1615,6 +1839,7 @@ resetButton.addEventListener("click", () => {
 async function init() {
   applyStaticTranslations();
   await restoreState();
+  syncRecommendedSubtitle();
   await submitForm();
 }
 

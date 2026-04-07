@@ -207,6 +207,21 @@ body {
   position: relative;
 }
 
+.choice-field {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.choice-field legend {
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 .field-span-2 {
   grid-column: 1 / -1;
 }
@@ -230,6 +245,41 @@ body {
 
 .field small {
   color: var(--muted);
+  line-height: 1.45;
+}
+
+.choice-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.choice-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-strong);
+  cursor: pointer;
+}
+
+.choice-card input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.choice-title {
+  font-weight: 700;
+}
+
+.choice-description {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.9rem;
   line-height: 1.45;
 }
 
@@ -714,6 +764,29 @@ button[type="submit"] {
   background: #f6faf8;
   border: 1px solid var(--line);
   color: var(--text);
+}
+
+.analysis-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(24, 48, 43, 0.08);
+}
+
+.analysis-meta-row {
+  display: grid;
+  gap: 4px;
+}
+
+.analysis-meta-row strong {
+  font-size: 0.82rem;
+}
+
+.analysis-meta-row span {
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .final-plan-note {

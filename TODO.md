@@ -5,10 +5,6 @@
 <!-- screenshots: add [ss://...] at end of todo line; multiple separated by ; -->
 
 ## Open
-
-- [ ] T015 · Förklara hur analysen gjord och vilka parametrar som styrde. Lättbegripligt språk. Ändå tydligt. Gör detta för varje analys som görs. Vanlig svenska
-- [ ] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda) etc. Finns några begränsningar som slagit i? Typ max vinstuttag eller liknande.
-- [ ] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
 - [ ] T002 · Add separate municipality tax inputs per owner, including burial fee and optional faith-community fee.
 - [ ] T003 · Add explicit Svenska kyrkan membership handling per owner instead of assuming one shared municipal-style rate.
 - [ ] T001 · Add support for planning years beyond `2026` once official constants and K10 rule details are available.
@@ -24,3 +20,6 @@
 
 ## Closed
 
+- [x] T013 · Ägarfördelning jämförs i bakgrunden -> Även indikerat på "Slutgiltigt förslag" att den inte är färdigbehandlad. Formulera om denna även.
+- [x] T014 · Styrparametrarna ska kunna justeras. Maximalt uttag/minimal skatt, minsta ”löneuttag netto” (inkl utdelning för båda) etc. Finns några begränsningar som slagit i? Typ max vinstuttag eller liknande.
+- [x] T015 · Förklara hur analysen gjord och vilka parametrar som styrde. Lättbegripligt språk. Ändå tydligt. Gör detta för varje analys som görs. Vanlig svenska.

@@ -22,6 +22,7 @@ from .tax import compute_personal_tax
 
 class PlanningInput(BaseModel):
     year: int = Field(default=2026)
+    optimization_profile: str = Field(default="target_then_tax")
     user_display_name: str = Field(default="", max_length=40)
     spouse_display_name: str = Field(default="", max_length=40)
     user_birth_year: int = Field(default=1985, ge=1900, le=2010)
@@ -30,6 +31,7 @@ class PlanningInput(BaseModel):
     tax_parish: str = Field(default="")
     include_church_fee: bool = Field(default=False)
     target_user_net_income: float = Field(default=650_000, ge=0)
+    household_min_net_income: float = Field(default=0, ge=0)
     user_other_salary_income: float = Field(
         default=0,
         ge=0,
@@ -63,6 +65,14 @@ class PlanningInput(BaseModel):
     def validate_year(cls, value: int) -> int:
         if value not in SUPPORTED_YEARS:
             raise ValueError(f"Unsupported year. Choose one of: {', '.join(str(year) for year in SUPPORTED_YEARS)}.")
+        return value
+
+    @field_validator("optimization_profile")
+    @classmethod
+    def validate_optimization_profile(cls, value: str) -> str:
+        allowed = {"target_then_tax", "household_max", "tax_min"}
+        if value not in allowed:
+            raise ValueError(f"Unsupported optimization profile. Choose one of: {', '.join(sorted(allowed))}.")
         return value
 
     @model_validator(mode="after")
@@ -433,6 +443,7 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
         "distance_to_target": round(abs(user_net_from_company - data.target_user_net_income), 2),
         "shortfall_to_target": round(max(data.target_user_net_income - user_net_from_company, 0.0), 2),
         "overshoot_to_target": round(max(user_net_from_company - data.target_user_net_income, 0.0), 2),
+        "household_shortfall_to_floor": round(max(data.household_min_net_income - household_net_from_company, 0.0), 2),
         "extraction_total": round(extraction_total, 2),
         "total_tax_burden": round(total_tax_burden, 2),
         "company": company,
@@ -447,8 +458,32 @@ def evaluate_plan(data: PlanningInput, planned_salary: float, total_dividend: fl
     }
 
 
-def recommendation_sort_key(item: dict[str, Any]) -> tuple[float, float, float, float, float]:
+def recommendation_sort_key(data: PlanningInput, item: dict[str, Any]) -> tuple[float, ...]:
+    household_shortfall = item["household_shortfall_to_floor"]
+
+    if data.optimization_profile == "household_max":
+        return (
+            0 if household_shortfall == 0 else 1,
+            household_shortfall,
+            -item["household_net_from_company"],
+            item["total_tax_burden"],
+            item["distance_to_target"],
+            item["salary"],
+        )
+
+    if data.optimization_profile == "tax_min":
+        return (
+            0 if household_shortfall == 0 and item["shortfall_to_target"] == 0 else 1,
+            household_shortfall + item["shortfall_to_target"],
+            item["total_tax_burden"],
+            item["overshoot_to_target"],
+            -item["household_net_from_company"],
+            item["salary"],
+        )
+
     return (
+        0 if household_shortfall == 0 else 1,
+        household_shortfall,
         0 if item["shortfall_to_target"] == 0 else 1,
         item["shortfall_to_target"],
         item["overshoot_to_target"],
@@ -506,7 +541,7 @@ def choose_dividend_for_salary(data: PlanningInput, salary: float) -> dict[str, 
     if not candidates:
         return None
 
-    return min(candidates, key=recommendation_sort_key)
+    return min(candidates, key=lambda item: recommendation_sort_key(data, item))
 
 
 def refine_salary_candidates(
@@ -572,6 +607,33 @@ def build_alternative_scenarios(data: PlanningInput, evaluated: list[dict[str, A
             "label": "Maximum user net",
             "description": "Highest user after-tax income the model can find within the current company budget.",
             "scenario": max(evaluated, key=lambda item: (item["user_net_from_company"], -item["total_tax_burden"])),
+        }
+    )
+    recommendations.append(
+        {
+            "label": "Lowest total tax",
+            "description": "Lowest total tax burden that the model can find within the current company budget.",
+            "scenario": min(
+                evaluated,
+                key=lambda item: (
+                    item["total_tax_burden"],
+                    item["distance_to_target"],
+                    -item["household_net_from_company"],
+                ),
+            ),
+        }
+    )
+    recommendations.append(
+        {
+            "label": "Highest household net",
+            "description": "Highest combined household net from the company that the model can find within the current company budget.",
+            "scenario": max(
+                evaluated,
+                key=lambda item: (
+                    item["household_net_from_company"],
+                    -item["total_tax_burden"],
+                ),
+            ),
         }
     )
 
@@ -721,7 +783,7 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
     if not evaluated:
         raise ValueError("No feasible scenario could be created from the provided company profit.")
 
-    medium_centers = {item["salary"] for item in sorted(evaluated, key=recommendation_sort_key)[:8]}
+    medium_centers = {item["salary"] for item in sorted(evaluated, key=lambda item: recommendation_sort_key(data, item))[:8]}
     evaluated.extend(
         refine_salary_candidates(
             data,
@@ -732,7 +794,7 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
         )
     )
 
-    fine_centers = {item["salary"] for item in sorted(evaluated, key=recommendation_sort_key)[:8]}
+    fine_centers = {item["salary"] for item in sorted(evaluated, key=lambda item: recommendation_sort_key(data, item))[:8]}
     evaluated.extend(
         refine_salary_candidates(
             data,
@@ -743,10 +805,18 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
         )
     )
 
-    recommended = min(evaluated, key=recommendation_sort_key)
+    recommended = min(evaluated, key=lambda item: recommendation_sort_key(data, item))
     alternatives = build_alternative_scenarios(data, evaluated)
     compensation_mix = build_compensation_mix_analysis(data, recommended, evaluated)
-    return {"recommended": recommended, "alternatives": alternatives, "compensation_mix": compensation_mix}
+    return {
+        "recommended": recommended,
+        "alternatives": alternatives,
+        "compensation_mix": compensation_mix,
+        "search_meta": {
+            "max_feasible_salary": round(max(item["salary"] for item in evaluated), 2),
+            "max_feasible_dividend": round(max(item["total_dividend"] for item in evaluated), 2),
+        },
+    }
 
 
 def suggest_ownership_split(data: PlanningInput) -> dict[str, Any] | None:
@@ -825,8 +895,14 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
     recommended = planned["recommended"]
     alternatives = planned["alternatives"]
     compensation_mix = planned["compensation_mix"]
+    search_meta = planned["search_meta"]
     salary_basis_year = DIVIDEND_RULES[data.year].salary_basis_year
     ownership_suggestion = suggest_ownership_split(data) if include_ownership_analysis else None
+    profile_explanation_key = {
+        "target_then_tax": "explanation.recommendation_profile_target_then_tax",
+        "household_max": "explanation.recommendation_profile_household_max",
+        "tax_min": "explanation.recommendation_profile_tax_min",
+    }[data.optimization_profile]
 
     return {
         "input": data.model_dump(),
@@ -834,6 +910,8 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
             "planning_year": data.year,
             "salary_basis_year": salary_basis_year,
             "supported_years": SUPPORTED_YEARS,
+            "max_feasible_salary": search_meta["max_feasible_salary"],
+            "max_feasible_dividend": search_meta["max_feasible_dividend"],
         },
         "recommended": recommended,
         "alternatives": alternatives,
@@ -861,6 +939,10 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
         "explanations": [
             {"key": "explanation.salary_uses_planning_year", "params": {"planningYear": data.year}},
             {"key": "explanation.dividend_uses_salary_basis_year", "params": {"planningYear": data.year, "salaryBasisYear": salary_basis_year}},
-            {"key": "explanation.recommendation_scoring", "params": {}},
+            {"key": profile_explanation_key, "params": {}},
+            {
+                "key": "explanation.household_floor_active" if data.household_min_net_income > 0 else "explanation.household_floor_none",
+                "params": {"householdMinNetIncome": round(data.household_min_net_income, 2)},
+            },
         ],
     }
