@@ -4,6 +4,9 @@ const LANGUAGE_KEY = "skatteuttag-language";
 const form = document.querySelector("#planner-form");
 const yearInput = document.querySelector("#year");
 const languageSwitch = document.querySelector("#language-switch");
+const exportDataButton = document.querySelector("#export-data");
+const importDataButton = document.querySelector("#import-data");
+const importDataFileInput = document.querySelector("#import-data-file");
 const exportPdfButton = document.querySelector("#export-pdf");
 const errorBox = document.querySelector("#error-box");
 const summaryBox = document.querySelector("#recommendation-summary");
@@ -18,6 +21,7 @@ const pageTitle = document.querySelector("#page-title");
 const appNameElement = document.querySelector("#app-name");
 const recommendedSubtitle = document.querySelector("#recommended-subtitle");
 const compensationMixBox = document.querySelector("#compensation-mix-analysis");
+const problemSignalsBox = document.querySelector("#problem-signals");
 const ownershipSuggestionBox = document.querySelector("#ownership-suggestion");
 const userDisplayNameInput = document.querySelector("#user-display-name");
 const spouseDisplayNameInput = document.querySelector("#spouse-display-name");
@@ -46,6 +50,8 @@ const userShareCostBasisLabel = document.querySelector("#user-share-cost-basis-l
 const spouseShareCostBasisLabel = document.querySelector("#spouse-share-cost-basis-label");
 const numericInputs = Array.from(document.querySelectorAll(".js-number"));
 const infoPopovers = Array.from(document.querySelectorAll(".info-popover"));
+const EXPORT_SCHEMA = "skatteuttag-planning-export";
+const EXPORT_VERSION = 1;
 
 const TRANSLATIONS = {
   sv: {
@@ -53,7 +59,11 @@ const TRANSLATIONS = {
     "meta.description": "Löne- och utdelningsplanering för ett svenskt aktiebolag med tydlig årskopplad skattelogik.",
     "language.label": "Språk",
     "button.export_pdf": "Exportera till pdf",
+    "button.export_data": "Exportera data",
+    "button.import_data": "Importera data",
     "button.exporting_pdf": "Exporterar PDF...",
+    "button.exporting_data": "Exporterar data...",
+    "button.importing_data": "Importerar data...",
     "hero.eyebrow": "Svensk skatteplanering för ägarledda bolag",
     "hero.lede": "Planera lön och utdelning i ett svenskt aktiebolag med ett valt planeringsår. Appen förklarar hur utbetalningsåret och lönebasåret hänger ihop.",
     "hero.supported_years": "Stödda år: {years}",
@@ -80,7 +90,7 @@ const TRANSLATIONS = {
     "field.tax_municipality": "Kommun för skatteautoifyllning",
     "field.tax_parish": "Församling",
     "field.include_church_fee": "Medlem i Svenska kyrkan",
-    "field.include_church_fee_hint": "Lägg till kyrkoavgift från vald församling.",
+    "field.include_church_fee_hint": "Ta med kyrkoavgift",
     "field.municipal_tax_rate": "Kommunalskatt",
     "field.tax_option_placeholder": "Välj kommun",
     "field.parish_option_placeholder": "Välj församling",
@@ -139,11 +149,17 @@ const TRANSLATIONS = {
     "recommended.final_status_pending": "Slutligt förslag är fortfarande preliminärt. Lön och utdelning visas redan, men aktiefördelningen kan ändras när ägaranalysen är färdig.",
     "recommended.final_status_same": "Det här är modellens bästa helhetsförslag givet nuvarande indata.",
     "recommended.final_status_better": "Modellen hittar ett bättre hushållsutfall med den föreslagna aktiefördelningen än med nuvarande fördelning.",
-    "optimization.target_then_tax.title": "Närmast användarens mål",
+    "problem.title": "Problem att känna till",
+    "problem.user_target_unreachable": "Med nuvarande indata når modellen som mest {maxUserNet} i användarnetto från bolaget. Målet ligger cirka {targetGap} högre.",
+    "problem.user_target_not_met_under_profile": "Det valda huvudförslaget ligger cirka {targetGap} under användarens mål. Inom bolagets budget finns scenarier som når upp till {maxUserNet} i användarnetto, men de väljs inte av nuvarande optimeringsprofil.",
+    "problem.household_floor_unreachable": "Det angivna hushållsgolvet verkar inte nåbart med nuvarande indata. Modellen når som mest {maxHouseholdNet} i hushållsnetto från bolaget, vilket är cirka {householdGap} under golvet.",
+    "problem.salary_cap_reached": "Förslaget ligger redan vid modellens högsta möjliga kontanta lön inom nuvarande bolagsbudget.",
+    "problem.dividend_cap_reached": "Förslaget använder i praktiken hela den tillgängliga utdelningslikviden i modellen.",
+    "optimization.target_then_tax.title": "Närmast mål",
     "optimization.target_then_tax.description": "Prioritera användarens önskade netto, välj sedan lägre total skatt.",
-    "optimization.household_max.title": "Maximera hushållets netto",
+    "optimization.household_max.title": "Högst hushållsnetto",
     "optimization.household_max.description": "Prioritera högsta gemensamma netto från bolaget för hushållet.",
-    "optimization.tax_min.title": "Minimera total skatt",
+    "optimization.tax_min.title": "Lägst skatt",
     "optimization.tax_min.description": "Prioritera lägsta total skatt när inmatade mål går att nå eller komma nära.",
     "breakdown.title": "Nedbrytning",
     "breakdown.subtitle": "Bolagets kassaflöde, löneskatt, utdelningsskatt och utdelningsutrymme.",
@@ -265,16 +281,18 @@ const TRANSLATIONS = {
     "analysis.control_profile_target_then_tax": "Profil: närmast användarens nettomål, sedan lägre total skatt.",
     "analysis.control_profile_household_max": "Profil: högsta hushållsnetto från bolaget, sedan lägre total skatt.",
     "analysis.control_profile_tax_min": "Profil: lägsta total skatt efter att satta mål nås så långt som möjligt.",
-    "analysis.control_household_floor_active": "Hushållsgolvet är satt till minst {amount} netto från bolaget.",
-    "analysis.control_household_floor_none": "Inget särskilt hushållsgolv är satt.",
+    "analysis.control_household_floor_active": "En miniminivå på {amount} netto från bolaget är satt för hushållet.",
+    "analysis.control_household_floor_none": "Ingen särskild miniminivå för hushållets netto från bolaget är satt.",
     "analysis.constraint_none": "Inga tydliga modellbegränsningar slog i för det visade huvudförslaget.",
     "analysis.constraint_user_target": "Användarens nettomål nås inte fullt ut. Det saknas cirka {amount}.",
-    "analysis.constraint_household_floor": "Det angivna hushållsgolvet nås inte fullt ut. Det saknas cirka {amount}.",
+    "analysis.constraint_household_floor": "Den angivna miniminivån för hushållets netto från bolaget nås inte fullt ut. Det saknas cirka {amount}.",
     "analysis.constraint_dividend_cap": "Förslaget använder i praktiken hela den tillgängliga utdelningslikviden.",
     "analysis.constraint_salary_cap": "Förslaget ligger vid modellens högsta möjliga kontanta lön inom nuvarande bolagsbudget.",
     "analysis.constraint_household_not_max": "Det finns ett annat scenario i modellen som ger högre hushållsnetto, men huvudförslaget följer den valda optimeringsprofilen.",
     "error.calculation_failed": "Beräkningen misslyckades.",
     "error.export_failed": "PDF-exporten misslyckades.",
+    "error.import_failed": "Importen misslyckades.",
+    "error.import_invalid_format": "Filen kunde inte läsas. Välj en giltig export från Skatteuttag.",
     "status.calculating": "Beräknar rekommendation...",
     "button.calculating": "Beräknar...",
     "rule.main": "Huvudregeln",
@@ -306,15 +324,19 @@ const TRANSLATIONS = {
     "explanation.recommendation_profile_target_then_tax": "Huvudförslaget är styrt mot användarens nettomål först och lägre total skatt därefter.",
     "explanation.recommendation_profile_household_max": "Huvudförslaget är styrt mot högsta möjliga hushållsnetto från bolaget och lägre total skatt därefter.",
     "explanation.recommendation_profile_tax_min": "Huvudförslaget är styrt mot lägsta total skatt, men försöker samtidigt nå inmatade mål så långt det går.",
-    "explanation.household_floor_active": "Ett hushållsgolv på {householdMinNetIncome} kr netto från bolaget används som styrande villkor i rekommendationen.",
-    "explanation.household_floor_none": "Inget särskilt hushållsgolv används i rekommendationen."
+    "explanation.household_floor_active": "En miniminivå på {householdMinNetIncome} kr netto från bolaget används som styrande villkor i rekommendationen.",
+    "explanation.household_floor_none": "Ingen särskild miniminivå för hushållets netto från bolaget används i rekommendationen."
   },
   en: {
     "brand.app_name": "TaxSplit",
     "meta.description": "Salary and dividend planning for a Swedish limited company with transparent year-based tax logic.",
     "language.label": "Language",
     "button.export_pdf": "Export PDF",
+    "button.export_data": "Export data",
+    "button.import_data": "Import data",
     "button.exporting_pdf": "Exporting PDF...",
+    "button.exporting_data": "Exporting data...",
+    "button.importing_data": "Importing data...",
     "hero.eyebrow": "Swedish tax planning for owner-managed companies",
     "hero.lede": "Plan salary and dividends for a Swedish limited company with one chosen planning year. The app explains how the payout year and the salary-base year interact.",
     "hero.supported_years": "Supported years: {years}",
@@ -341,7 +363,7 @@ const TRANSLATIONS = {
     "field.tax_municipality": "Municipality for tax auto-fill",
     "field.tax_parish": "Parish",
     "field.include_church_fee": "Member of the Church of Sweden",
-    "field.include_church_fee_hint": "Add church fee from the selected parish.",
+    "field.include_church_fee_hint": "Include church fee",
     "field.municipal_tax_rate": "Municipal tax rate",
     "field.tax_option_placeholder": "Select municipality",
     "field.parish_option_placeholder": "Select parish",
@@ -400,11 +422,17 @@ const TRANSLATIONS = {
     "recommended.final_status_pending": "The final recommendation is still preliminary. Salary and dividend are already shown, but the ownership split may still change when the ownership analysis finishes.",
     "recommended.final_status_same": "This is the model's best overall proposal based on the current inputs.",
     "recommended.final_status_better": "The model finds a better household outcome with the suggested ownership split than with the current split.",
-    "optimization.target_then_tax.title": "Closest to the user's target",
+    "problem.title": "Important constraints",
+    "problem.user_target_unreachable": "With the current inputs, the model reaches at most {maxUserNet} in user net income from the company. The target is about {targetGap} higher.",
+    "problem.user_target_not_met_under_profile": "The selected main recommendation sits about {targetGap} below the user's target. Within the current company budget there are scenarios that reach up to {maxUserNet} in user net income, but the current optimization profile does not select them.",
+    "problem.household_floor_unreachable": "The entered household floor does not appear reachable with the current inputs. The model reaches at most {maxHouseholdNet} in household net from the company, which is about {householdGap} below the floor.",
+    "problem.salary_cap_reached": "The proposal already sits at the model's highest feasible cash salary within the current company budget.",
+    "problem.dividend_cap_reached": "The proposal is effectively using the full available dividend cash in the model.",
+    "optimization.target_then_tax.title": "Closest to target",
     "optimization.target_then_tax.description": "Prioritize the user's requested net income, then prefer lower total tax.",
-    "optimization.household_max.title": "Maximize household net",
+    "optimization.household_max.title": "Highest household net",
     "optimization.household_max.description": "Prioritize the highest combined net income from the company for the household.",
-    "optimization.tax_min.title": "Minimize total tax",
+    "optimization.tax_min.title": "Lowest tax",
     "optimization.tax_min.description": "Prioritize the lowest total tax when the entered goals can be met or approached.",
     "breakdown.title": "Breakdown",
     "breakdown.subtitle": "Company cash flow, salary tax, dividend tax, and dividend room.",
@@ -536,6 +564,8 @@ const TRANSLATIONS = {
     "analysis.constraint_household_not_max": "Another scenario in the model gives a higher household net outcome, but the main recommendation follows the chosen optimization profile.",
     "error.calculation_failed": "Calculation failed.",
     "error.export_failed": "PDF export failed.",
+    "error.import_failed": "Import failed.",
+    "error.import_invalid_format": "The file could not be read. Choose a valid export from TaxSplit.",
     "status.calculating": "Calculating recommendation...",
     "button.calculating": "Calculating...",
     "rule.main": "Main rule",
@@ -649,6 +679,37 @@ function readSavedState() {
   } catch {
     return { ...window.APP_DEFAULTS };
   }
+}
+
+function buildPortableState() {
+  return {
+    ...formToObject(),
+    _municipal_tax_manual_override: municipalTaxManualOverride,
+  };
+}
+
+function buildExportPayload() {
+  return {
+    schema: EXPORT_SCHEMA,
+    version: EXPORT_VERSION,
+    exported_at: new Date().toISOString(),
+    app_name: t("brand.app_name"),
+    language: currentLanguage,
+    form: buildPortableState(),
+    analysis: lastResult,
+  };
+}
+
+function sanitizeImportedState(rawState) {
+  if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
+    throw new Error(t("error.import_invalid_format"));
+  }
+
+  const merged = { ...window.APP_DEFAULTS, ...rawState };
+  if (merged.user_other_salary_income === undefined && merged.user_other_service_income !== undefined) {
+    merged.user_other_salary_income = merged.user_other_service_income;
+  }
+  return merged;
 }
 
 function normalizeNumericToken(token, kind = "amount") {
@@ -1095,11 +1156,37 @@ async function restoreState() {
 function saveState() {
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({
-      ...formToObject(),
-      _municipal_tax_manual_override: municipalTaxManualOverride,
-    }),
+    JSON.stringify(buildPortableState()),
   );
+}
+
+function downloadJsonFile(filename, payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildExportFilename() {
+  const datePart = new Date().toISOString().slice(0, 10);
+  return `skatteuttag-${datePart}.json`;
+}
+
+function applyImportedState(source) {
+  const imported = sanitizeImportedState(source);
+  municipalTaxManualOverride = Boolean(imported._municipal_tax_manual_override);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+  if (typeof imported.language === "string" && ["sv", "en"].includes(imported.language)) {
+    currentLanguage = imported.language;
+    localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+    applyStaticTranslations();
+  }
+  return restoreState();
 }
 
 function saveStateIfFormField(event) {
@@ -1258,6 +1345,23 @@ function renderMetrics(result) {
     ${metric(t("metric.household_net"), formatCurrency(recommendation.household_net_from_company), t("metric.household_net_sub"))}
     ${metric(t("metric.distance_to_target"), formatCurrency(recommendation.distance_to_target), recommendation.shortfall_to_target > 0 ? t("metric.distance_target_shortfall") : t("metric.distance_target_reached"))}
     ${metric(t("metric.total_tax_burden"), formatCurrency(recommendation.total_tax_burden), t("metric.total_tax_burden_sub"))}
+  `;
+}
+
+function renderProblemSignals(result) {
+  const problems = result.problems || [];
+  if (!problems.length) {
+    problemSignalsBox.innerHTML = "";
+    return;
+  }
+
+  problemSignalsBox.innerHTML = `
+    <div class="note problem-note">
+      <strong>${t("problem.title")}</strong>
+      <div class="problem-list">
+        ${problems.map((item) => `<div>${translateMessage(item)}</div>`).join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -1574,6 +1678,7 @@ function setLoadingState() {
   syncRecommendedSubtitle();
   summaryBox.classList.add("empty-state");
   summaryBox.innerHTML = `<span>${t("status.calculating")}</span>`;
+  problemSignalsBox.innerHTML = "";
   finalPlanBox.innerHTML = "";
   compensationMixBox.innerHTML = "";
   ownershipSuggestionBox.innerHTML = `
@@ -1647,6 +1752,53 @@ async function exportPdf() {
   }
 }
 
+function exportData() {
+  clearError();
+  saveState();
+  exportDataButton.disabled = true;
+  exportDataButton.textContent = t("button.exporting_data");
+
+  try {
+    downloadJsonFile(buildExportFilename(), buildExportPayload());
+  } finally {
+    exportDataButton.disabled = false;
+    exportDataButton.textContent = t("button.export_data");
+  }
+}
+
+async function importDataFile(file) {
+  if (!file) {
+    return;
+  }
+
+  clearError();
+  importDataButton.disabled = true;
+  importDataButton.textContent = t("button.importing_data");
+
+  try {
+    const raw = await file.text();
+    const parsed = JSON.parse(raw);
+    const importedForm = parsed?.schema === EXPORT_SCHEMA ? parsed.form : parsed;
+
+    if (parsed?.schema === EXPORT_SCHEMA && parsed.language && ["sv", "en"].includes(parsed.language)) {
+      currentLanguage = parsed.language;
+      localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+      applyStaticTranslations();
+    }
+
+    await applyImportedState(importedForm);
+    lastResult = parsed?.schema === EXPORT_SCHEMA && parsed.analysis ? parsed.analysis : null;
+    syncRecommendedSubtitle(lastResult);
+    await submitForm();
+  } catch (error) {
+    throw new Error(error instanceof SyntaxError ? t("error.import_invalid_format") : (error.message || t("error.import_failed")));
+  } finally {
+    importDataButton.disabled = false;
+    importDataButton.textContent = t("button.import_data");
+    importDataFileInput.value = "";
+  }
+}
+
 async function submitForm() {
   clearError();
   saveState();
@@ -1668,6 +1820,7 @@ async function submitForm() {
   const result = await response.json();
   lastResult = result;
   renderMetrics(result);
+  renderProblemSignals(result);
   renderFinalPlan(result);
   renderCompensationMixAnalysis(result);
   renderBreakdown(result);
@@ -1677,6 +1830,7 @@ async function submitForm() {
   try {
     const ownershipResult = await fetchOwnershipAnalysis(payload);
     lastResult = { ...result, ownership_suggestion: ownershipResult.ownership_suggestion };
+    renderProblemSignals(lastResult);
     renderFinalPlan(lastResult);
     renderOwnershipSuggestion(lastResult);
   } finally {
@@ -1781,6 +1935,7 @@ languageSwitch.addEventListener("change", (event) => {
   setFieldLabels(yearInput.value);
   if (lastResult) {
     renderMetrics(lastResult);
+    renderProblemSignals(lastResult);
     renderFinalPlan(lastResult);
     renderCompensationMixAnalysis(lastResult);
     renderOwnershipSuggestion(lastResult);
@@ -1798,6 +1953,22 @@ form.addEventListener("change", (event) => {
 
 exportPdfButton.addEventListener("click", () => {
   exportPdf().catch((error) => setError(error.message));
+});
+
+exportDataButton.addEventListener("click", () => {
+  try {
+    exportData();
+  } catch (error) {
+    setError(error.message);
+  }
+});
+
+importDataButton.addEventListener("click", () => {
+  importDataFileInput.click();
+});
+
+importDataFileInput.addEventListener("change", () => {
+  importDataFile(importDataFileInput.files?.[0]).catch((error) => setError(error.message));
 });
 
 document.addEventListener("click", (event) => {

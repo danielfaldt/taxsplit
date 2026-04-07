@@ -11,9 +11,13 @@ def test_index_renders():
     assert response.status_code == 200
     assert "Skatteuttag" in response.text
     assert 'id="language-switch"' in response.text
+    assert 'id="export-data"' in response.text
+    assert 'id="import-data"' in response.text
+    assert 'id="import-data-file"' in response.text
     assert 'id="export-pdf"' in response.text
     assert 'data-i18n="button.export_pdf"' in response.text
     assert 'id="compensation-mix-analysis"' in response.text
+    assert 'id="problem-signals"' in response.text
     assert 'id="final-plan-summary"' in response.text
     assert 'id="user-share-slider"' in response.text
     assert 'name="user_display_name"' in response.text
@@ -48,6 +52,7 @@ def test_api_calculate_returns_json():
     payload = response.json()
     assert payload["recommended"]["salary"] >= 0
     assert "compensation_mix" in payload
+    assert "problems" in payload
     assert "summary" in payload["compensation_mix"]
     assert payload["ownership_suggestion"] is None
 
@@ -113,6 +118,8 @@ def test_client_script_persists_form_state_on_input():
     assert "info.goal_section" in body
     assert "info.optimization_profile" in body
     assert "recommended.final_summary_pending" in body
+    assert "problem.user_target_unreachable" in body
+    assert "renderProblemSignals" in body
     assert "analysis.recommendation_method" in body
     assert "analysis.constraint_user_target" in body
     assert "recommended.subtitle_household_max" in body
@@ -137,6 +144,11 @@ def test_client_script_persists_form_state_on_input():
     assert "evaluateArithmeticExpression" in body
     assert "positionInfoPopover" in body
     assert 'event.key !== "Enter"' in body
+    assert "EXPORT_SCHEMA" in body
+    assert "buildExportPayload" in body
+    assert "importDataFile" in body
+    assert "downloadJsonFile" in body
+    assert 'id="export-data"' in client.get("/").text
 
 
 def test_styles_include_popover_positioning_rules():

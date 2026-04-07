@@ -17,6 +17,7 @@ The primary company input is the company result before corporate tax. The app th
 - Optional household net floor that can be used as a hard steering condition in the recommendation search
 - Explicit salary-versus-dividend analysis with reasoning and nearby comparison mixes
 - Server-generated PDF export for formal review by advisors, auditors, or the user
+- JSON export/import for moving scenarios between browsers or archiving a scenario together with the latest analysis
 - Birth-year-aware personal tax and employer contribution handling
 - Adjustable ownership split between spouses, plus an indicative ownership suggestion when a different split lowers total tax
 - Additional planning inputs for salary outside the company, car benefit, occupational pension, opening periodization-fund balance, and periodization fund adjustments
@@ -63,6 +64,8 @@ Open:
 ```text
 http://10.20.30.100:31847
 ```
+
+Use `Export data` to save the current form state plus the latest analysis as a JSON file. Use `Import data` to load a previously exported scenario, restore it into the form, save it into browser storage, and recalculate the result.
 
 ### Run tests
 

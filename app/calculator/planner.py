@@ -746,6 +746,59 @@ def build_compensation_mix_analysis(
     }
 
 
+def build_problem_signals(
+    data: PlanningInput,
+    recommended: dict[str, Any],
+    search_meta: dict[str, float],
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+
+    max_user_net = search_meta["max_user_net"]
+    max_household_net = search_meta["max_household_net"]
+    max_feasible_salary = search_meta["max_feasible_salary"]
+    max_feasible_dividend = search_meta["max_feasible_dividend"]
+
+    if data.target_user_net_income - max_user_net > 1:
+        issues.append(
+            {
+                "key": "problem.user_target_unreachable",
+                "params": {
+                    "targetGap": round(data.target_user_net_income - max_user_net, 2),
+                    "maxUserNet": round(max_user_net, 2),
+                },
+            }
+        )
+    elif recommended["shortfall_to_target"] > 1:
+        issues.append(
+            {
+                "key": "problem.user_target_not_met_under_profile",
+                "params": {
+                    "targetGap": round(recommended["shortfall_to_target"], 2),
+                    "maxUserNet": round(max_user_net, 2),
+                },
+            }
+        )
+
+    if data.household_min_net_income - max_household_net > 1:
+        issues.append(
+            {
+                "key": "problem.household_floor_unreachable",
+                "params": {
+                    "householdGap": round(data.household_min_net_income - max_household_net, 2),
+                    "maxHouseholdNet": round(max_household_net, 2),
+                },
+            }
+        )
+
+    if recommended["salary"] >= max_feasible_salary - 100:
+        issues.append({"key": "problem.salary_cap_reached", "params": {}})
+
+    if recommended["total_dividend"] >= max_feasible_dividend - 100 and max_feasible_dividend > 0:
+        issues.append({"key": "problem.dividend_cap_reached", "params": {}})
+
+    return issues
+
+
 def build_split_variant(data: PlanningInput, user_share_percentage: float) -> PlanningInput:
     user_fraction = user_share_percentage / 100.0
     spouse_fraction = 1.0 - user_fraction
@@ -815,6 +868,9 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
         "search_meta": {
             "max_feasible_salary": round(max(item["salary"] for item in evaluated), 2),
             "max_feasible_dividend": round(max(item["total_dividend"] for item in evaluated), 2),
+            "max_user_net": round(max(item["user_net_from_company"] for item in evaluated), 2),
+            "max_household_net": round(max(item["household_net_from_company"] for item in evaluated), 2),
+            "min_total_tax": round(min(item["total_tax_burden"] for item in evaluated), 2),
         },
     }
 
@@ -916,6 +972,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
         "recommended": recommended,
         "alternatives": alternatives,
         "compensation_mix": compensation_mix,
+        "problems": build_problem_signals(data, recommended, search_meta),
         "ownership_suggestion": ownership_suggestion,
         "assumptions": [
             {

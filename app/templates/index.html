@@ -23,7 +23,10 @@
           </p>
         </div>
         <div class="hero-note">
+          <button type="button" id="export-data" class="pill pill-button" data-i18n="button.export_data">Exportera data</button>
+          <button type="button" id="import-data" class="pill pill-button" data-i18n="button.import_data">Importera data</button>
           <button type="button" id="export-pdf" class="pill pill-button" data-i18n="button.export_pdf">Exportera till pdf</button>
+          <input id="import-data-file" type="file" accept="application/json,.json" class="visually-hidden">
           <label class="language-switch pill">
             <span data-i18n="language.label">Language</span>
             <select id="language-switch" aria-label="Language">
@@ -239,7 +242,7 @@
 
                 <label class="field">
                   <span data-i18n="field.include_church_fee">Member of the Church of Sweden</span>
-                  <div class="checkbox-row">
+                  <div class="checkbox-row checkbox-row-compact">
                     <input name="include_church_fee" id="include-church-fee" type="checkbox" {% if defaults.include_church_fee %}checked{% endif %}>
                     <span data-i18n="field.include_church_fee_hint">Add church fee from the selected parish.</span>
                   </div>
@@ -414,6 +417,7 @@
             <div id="recommendation-summary" class="metric-grid empty-state">
               <span data-i18n="recommended.empty">Submit the form to generate a recommendation.</span>
             </div>
+            <div id="problem-signals" class="note-list"></div>
             <div id="final-plan-summary" class="note-list"></div>
             <div id="compensation-mix-analysis" class="note-list"></div>
             <div id="ownership-suggestion" class="note-list"></div>

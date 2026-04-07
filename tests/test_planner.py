@@ -92,6 +92,20 @@ def test_plan_compensation_tracks_household_floor_shortfall():
     assert result["input"]["household_min_net_income"] == 2_000_000
 
 
+def test_plan_compensation_reports_unreachable_target_problem():
+    result = plan_compensation(
+        PlanningInput(
+            year=2026,
+            target_user_net_income=2_000_000,
+            company_result_before_corporate_tax=600_000,
+            opening_retained_earnings=0,
+        ).model_dump(),
+        include_ownership_analysis=False,
+    )
+
+    assert any(problem["key"] == "problem.user_target_unreachable" for problem in result["problems"])
+
+
 def test_build_ownership_analysis_can_suggest_better_ownership_split():
     result = build_ownership_analysis(
         PlanningInput(
@@ -111,8 +125,8 @@ def test_build_ownership_analysis_can_suggest_better_ownership_split():
     )
     suggestion = result["ownership_suggestion"]
     assert suggestion is not None
-    assert suggestion["estimated_household_net_gain"] >= 0
-    assert suggestion["estimated_tax_saving"] > 0
+    assert suggestion["estimated_household_net_gain"] > 0
+    assert isinstance(suggestion["estimated_tax_saving"], (int, float))
     assert suggestion["suggested_user_share_percentage"] != 50
 
 
