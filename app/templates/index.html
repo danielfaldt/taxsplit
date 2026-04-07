@@ -97,58 +97,67 @@
           <div class="subsection">
             <div class="section-header section-header-compact">
               <div>
-                <h3 data-i18n="inputs.goal_title">Planning target</h3>
-                <p data-i18n="inputs.goal_subtitle">These values steer what recommendation the app should optimize toward.</p>
+                <div class="section-heading-inline">
+                  <h3 data-i18n="inputs.goal_title">Planning target</h3>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.goal_section">This section controls what the recommendation should optimize for and which result levels the app should try to respect.</div>
+                  </details>
+                </div>
               </div>
               <div class="section-tag-list">
                 <span class="section-tag section-tag-accent" data-i18n="tag.planning_choice">Planning choice</span>
               </div>
             </div>
-            <div class="field-columns">
-              <div class="field-column">
-                <label class="field">
-                  <span data-i18n="field.planning_year">Planning year</span>
-                  <select name="year" id="year">
-                    {% for year in supported_years %}
-                    <option value="{{ year }}" {% if year == defaults.year %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
+            <div class="field-grid goal-grid">
+              <label class="field">
+                <span data-i18n="field.planning_year">Planning year</span>
+                <select name="year" id="year">
+                  {% for year in supported_years %}
+                  <option value="{{ year }}" {% if year == defaults.year %}selected{% endif %}>{{ year }}</option>
+                  {% endfor %}
+                </select>
+              </label>
 
-                <label class="field">
-                  <span data-i18n="field.household_min_net_income">Minimum household net from the company</span>
-                  <input name="household_min_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.household_min_net_income if defaults.household_min_net_income is defined else 0 }}">
-                  <small data-i18n="field.household_min_net_income_hint">Use 0 if you do not want to force a household floor in the recommendation.</small>
-                </label>
-              </div>
+              <label class="field">
+                <span id="target-net-income-label" data-i18n="field.target_user_net_income">Desired user net income after tax</span>
+                <input name="target_user_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.target_user_net_income }}">
+              </label>
 
-              <div class="field-column">
-                <label class="field">
-                  <span id="target-net-income-label" data-i18n="field.target_user_net_income">Desired user net income after tax</span>
-                  <input name="target_user_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.target_user_net_income }}">
-                </label>
+              <label class="field field-span-2">
+                <div class="label-row">
+                  <span class="label-text" data-i18n="field.household_min_net_income">Minimum household net from the company</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="field.household_min_net_income_hint">Use 0 if you do not want to force a household floor in the recommendation.</div>
+                  </details>
+                </div>
+                <input name="household_min_net_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.household_min_net_income if defaults.household_min_net_income is defined else 0 }}">
+              </label>
 
-                <fieldset class="field choice-field">
+              <fieldset class="field field-span-2 choice-field">
+                <div class="legend-row">
                   <legend data-i18n="field.optimization_profile">How the main recommendation should be optimized</legend>
-                  <div class="choice-grid">
-                    <label class="choice-card">
-                      <input type="radio" name="optimization_profile" value="target_then_tax" {% if defaults.optimization_profile == "target_then_tax" %}checked{% endif %}>
-                      <span class="choice-title" data-i18n="optimization.target_then_tax.title">Closest to the user's target</span>
-                      <span class="choice-description" data-i18n="optimization.target_then_tax.description">Prioritize the user's requested net income, then prefer lower total tax.</span>
-                    </label>
-                    <label class="choice-card">
-                      <input type="radio" name="optimization_profile" value="household_max" {% if defaults.optimization_profile == "household_max" %}checked{% endif %}>
-                      <span class="choice-title" data-i18n="optimization.household_max.title">Maximize household net</span>
-                      <span class="choice-description" data-i18n="optimization.household_max.description">Prioritize the highest combined net income from the company for the household.</span>
-                    </label>
-                    <label class="choice-card">
-                      <input type="radio" name="optimization_profile" value="tax_min" {% if defaults.optimization_profile == "tax_min" %}checked{% endif %}>
-                      <span class="choice-title" data-i18n="optimization.tax_min.title">Minimize total tax</span>
-                      <span class="choice-description" data-i18n="optimization.tax_min.description">Prefer the lowest total tax once the entered goals are met as far as possible.</span>
-                    </label>
-                  </div>
-                </fieldset>
-              </div>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.optimization_profile">Choose whether the app should mainly chase the user's target, the household's highest net result, or the lowest total tax. The selected profile changes which scenario becomes the main recommendation.</div>
+                  </details>
+                </div>
+                <div class="choice-grid">
+                  <label class="choice-card">
+                    <input type="radio" name="optimization_profile" value="target_then_tax" {% if defaults.optimization_profile == "target_then_tax" %}checked{% endif %}>
+                    <span class="choice-title" data-i18n="optimization.target_then_tax.title">Closest to the user's target</span>
+                  </label>
+                  <label class="choice-card">
+                    <input type="radio" name="optimization_profile" value="household_max" {% if defaults.optimization_profile == "household_max" %}checked{% endif %}>
+                    <span class="choice-title" data-i18n="optimization.household_max.title">Maximize household net</span>
+                  </label>
+                  <label class="choice-card">
+                    <input type="radio" name="optimization_profile" value="tax_min" {% if defaults.optimization_profile == "tax_min" %}checked{% endif %}>
+                    <span class="choice-title" data-i18n="optimization.tax_min.title">Minimize total tax</span>
+                  </label>
+                </div>
+              </fieldset>
             </div>
           </div>
 

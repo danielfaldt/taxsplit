@@ -110,6 +110,8 @@ def test_client_script_persists_form_state_on_input():
     assert "field.household_min_net_income" in body
     assert "field.optimization_profile" in body
     assert "optimization.household_max.title" in body
+    assert "info.goal_section" in body
+    assert "info.optimization_profile" in body
     assert "recommended.final_summary_pending" in body
     assert "analysis.recommendation_method" in body
     assert "analysis.constraint_user_target" in body
