@@ -9,3 +9,5 @@ __pycache__/
 .env.local
 .dev-server.log
 dist/
+tmp/
+screenshots/
