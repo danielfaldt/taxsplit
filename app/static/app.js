@@ -623,6 +623,7 @@ const YEAR_DEFAULTS = {
 
 let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "sv";
 let lastResult = null;
+let activeSubmitRequestId = 0;
 let taxCatalog = new Map();
 let municipalTaxManualOverride = false;
 let applyingMunicipalTaxRate = false;
@@ -1855,6 +1856,7 @@ async function submitForm() {
   saveState();
   setLoadingState();
   const payload = formToObject();
+  const requestId = ++activeSubmitRequestId;
 
   const response = await fetch("/api/calculate", {
     method: "POST",
@@ -1869,6 +1871,9 @@ async function submitForm() {
   }
 
   const result = await response.json();
+  if (requestId !== activeSubmitRequestId) {
+    return;
+  }
   lastResult = result;
   renderMetrics(result);
   renderProblemSignals(result);
@@ -1877,16 +1882,25 @@ async function submitForm() {
   renderBreakdown(result);
   renderAlternatives(result);
   renderAssumptions(result);
+  clearLoadingState();
 
-  try {
-    const ownershipResult = await fetchOwnershipAnalysis(payload);
-    lastResult = { ...result, ownership_suggestion: ownershipResult.ownership_suggestion };
-    renderProblemSignals(lastResult);
-    renderFinalPlan(lastResult);
-    renderOwnershipSuggestion(lastResult);
-  } finally {
-    clearLoadingState();
-  }
+  fetchOwnershipAnalysis(payload)
+    .then((ownershipResult) => {
+      if (requestId !== activeSubmitRequestId) {
+        return;
+      }
+      lastResult = { ...result, ownership_suggestion: ownershipResult.ownership_suggestion };
+      renderProblemSignals(lastResult);
+      renderFinalPlan(lastResult);
+      renderOwnershipSuggestion(lastResult);
+    })
+    .catch((error) => {
+      if (requestId !== activeSubmitRequestId) {
+        return;
+      }
+      renderOwnershipSuggestion(result);
+      setError(error.message || t("error.calculation_failed"));
+    });
 }
 
 yearInput.addEventListener("change", (event) => {

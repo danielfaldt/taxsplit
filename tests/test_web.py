@@ -118,6 +118,9 @@ def test_client_script_persists_form_state_on_input():
     assert "arbetsgivardeklarationer eller bokföringens lönekonton" in body
     assert "ownership.loading_title" in body
     assert "ownership-loading" in body
+    assert "let activeSubmitRequestId = 0;" in body
+    assert "clearLoadingState();" in body
+    assert "fetchOwnershipAnalysis(payload)" in body
     assert "ownership.input_label" in body
     assert "ownership.proposal_label" in body
     assert "ownership.optimized_for_household" in body
