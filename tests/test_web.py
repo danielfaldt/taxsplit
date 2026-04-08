@@ -206,3 +206,5 @@ def test_styles_include_hidden_input_and_compact_checkbox_layout():
     assert ".checkbox-row-compact" in body
     assert ".action-menu" in body
     assert ".tax-summary" in body
+    assert ".hero {" in body
+    assert "z-index: 4;" in body
