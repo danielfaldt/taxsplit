@@ -151,7 +151,12 @@ def test_client_script_persists_form_state_on_input():
     assert "info.periodization_fund_change" in body
     assert "25 % av årets skattemässiga resultat före avsättningen" in body
     assert "förra årets redan bokförda avsättning" in body
+    assert "info.user_other_salary_income" in body
+    assert "info.spouse_external_salary" in body
+    assert "Ange årslön före skatt" in body
+    assert "bruttolönen från annan arbetsgivare" in body
     assert "arbetsgivardeklarationer eller bokföringens lönekonton" in body
+    assert "kontanta bruttolöner under lönebasåret" in body
     assert "ownership.loading_title" in body
     assert "ownership-loading" in body
     assert "ownership_analysis_pending" in body
@@ -175,6 +180,8 @@ def test_client_script_persists_form_state_on_input():
     assert "info.goal_section" in body
     assert "info.optimization_profile" in body
     assert "recommended.final_summary_pending" in body
+    assert "kontant bruttolön före skatt" in body
+    assert "total bruttoutdelning före utdelningsskatt" in body
     assert "problem.user_target_unreachable" in body
     assert "renderProblemSignals" in body
     assert "label.car_benefit_non_cash" in body
@@ -228,6 +235,7 @@ def test_client_script_persists_form_state_on_input():
     assert "normalizeErrorMessage" in body
     assert "error.periodization_allocation_too_high" in body
     assert "error.no_feasible_scenario_from_company_profit" in body
+    assert "Gross dividend before dividend tax" in body
     assert 'id="export-data"' in client.get("/").text
     assert "actionMenu" in body
 

@@ -92,7 +92,7 @@ const TRANSLATIONS = {
     "field.household_min_net_income": "Minsta hushållsnetto från bolaget",
     "field.household_min_net_income_hint": "Ange 0 om rekommendationen inte ska tvingas upp till en viss hushållsnivå.",
     "field.optimization_profile": "Så ska huvudförslaget optimeras",
-    "field.spouse_external_salary": "Makes/makas lön från annan arbetsgivare",
+    "field.spouse_external_salary": "Makes/makas bruttolön från annan arbetsgivare",
     "field.company_result_before_corporate_tax": "Bolagets resultat före bolagsskatt",
     "field.opening_retained_earnings": "Ingående fria vinstmedel tillgängliga för utdelning",
     "field.tax_municipality": "Kommun för skatteautoifyllning",
@@ -107,8 +107,8 @@ const TRANSLATIONS = {
     "field.parish_option_placeholder": "Välj församling",
     "salary_basis.title": "Lönebasår för utdelningsutrymme",
     "salary_basis.text": "För planeringsår {planningYear} tittar utdelningsutrymmet tillbaka på löneår {salaryBasisYear}.",
-    "field.prior_year_company_cash_salaries": "Bolagets kontanta löner under {salaryBasisYear}",
-    "field.prior_year_user_company_salary": "Användarens lön från bolaget under {salaryBasisYear}",
+    "field.prior_year_company_cash_salaries": "Bolagets kontanta bruttolöner under {salaryBasisYear}",
+    "field.prior_year_user_company_salary": "Användarens kontanta bruttolön från bolaget under {salaryBasisYear}",
     "shareholder.title": "Aktieägarvärden",
     "shareholder.subtitle": "Sparat utdelningsutrymme och omkostnadsbelopp anges separat för varje ägare.",
     "field.saved_dividend_space_user": "Användarens sparade utdelningsutrymme",
@@ -121,7 +121,7 @@ const TRANSLATIONS = {
     "field.spouse_birth_year": "Makes/makas födelseår",
     "field.user_share_percentage": "Användarens aktieandel",
     "field.spouse_share_percentage": "Makes/makas aktieandel",
-    "field.user_other_salary_income": "Användarens andra lön utanför bolaget",
+    "field.user_other_salary_income": "Användarens andra bruttolön utanför bolaget",
     "field.user_car_benefit": "Bilförmån för användaren",
     "field.planned_user_pension": "Planerad tjänstepension för användaren",
     "field.car_benefit_is_pensionable": "Bilförmån räknas in i pensionsunderlaget",
@@ -133,8 +133,10 @@ const TRANSLATIONS = {
     "info.company_result_before_corporate_tax": "Det här är årets resultat innan bolagsskatt och innan en ny avsättning till periodiseringsfond i appen. Om årsredovisningen visar bokslutsdispositioner ska du normalt utgå från raden resultat efter finansiella poster. Raden resultat före skatt kan annars bli för låg här om periodiseringsfonden redan dragits av där. Har du en aktuell resultatrapport är den ofta ännu bättre som underlag.",
     "info.opening_retained_earnings": "Det här är fria vinstmedel från tidigare år som redan får delas ut enligt senast fastställda bokslut. I årsredovisningen hittar du dem normalt i balansräkningen eller i förändringen av eget kapital, ofta som balanserad vinst eller annat fritt eget kapital. Sätt inte detta till noll om bolaget redan har utdelningsbara vinstmedel från tidigare år.",
     "info.periodization_fund_change": "Ange ett positivt belopp om du vill göra en ny avsättning i år och skjuta en del av årets vinst framåt. Ange ett negativt belopp om du vill återföra en tidigare periodiseringsfond till beskattning i år. En ny avsättning får normalt högst vara 25 % av årets skattemässiga resultat före avsättningen. I appen räknas det taket efter vald lön, arbetsgivaravgifter, bilförmån, tjänstepension och särskild löneskatt på pension. Lägg inte in förra årets redan bokförda avsättning här en gång till; den hör i stället hemma i ingående saldo om den fortfarande finns kvar.",
-    "info.prior_year_company_cash_salaries": "Det här är bolagets totala kontanta löner under lönebasåret. Det hämtas oftast inte direkt från årsredovisningen utan från lönerapporter, arbetsgivardeklarationer eller bokföringens lönekonton för året.",
-    "info.prior_year_user_company_salary": "Det här är din egen kontanta lön från bolaget under lönebasåret. Den hittar du normalt i lönebesked, arbetsgivardeklarationer eller en lönesammanställning för året, snarare än direkt i årsredovisningen.",
+    "info.user_other_salary_income": "Ange årslön före skatt, alltså bruttolönen som normalt står på lönespecen före preliminär skatt. Fyll inte i nettolön här.",
+    "info.spouse_external_salary": "Ange årslön före skatt, alltså bruttolönen från annan arbetsgivare. Det är normalt lönen före preliminär skatt på lönespecen.",
+    "info.prior_year_company_cash_salaries": "Det här är bolagets totala kontanta bruttolöner under lönebasåret, före de anställdas skatt. Det hämtas oftast inte direkt från årsredovisningen utan från lönerapporter, arbetsgivardeklarationer eller bokföringens lönekonton för året.",
+    "info.prior_year_user_company_salary": "Det här är din egen kontanta bruttolön från bolaget under lönebasåret, före skatt. Den hittar du normalt i lönebesked, arbetsgivardeklarationer eller en lönesammanställning för året, snarare än direkt i årsredovisningen.",
     "info.municipal_tax_rate": "Fältet autoifylls med kommunal och regional inkomstskatt från vald kommun. Begravningsavgift och eventuell kyrkoavgift hanteras separat i beräkningen. Du kan fortfarande ändra den synliga procentsatsen manuellt.",
     "info.car_benefit_is_pensionable": "Kryssa bara i detta om ert pensionsupplägg faktiskt räknar bilförmånen som pensionsgrundande lön. Är du osäker är det normalt säkrast att låta den vara av. Det påverkar bara hur stor tjänstepension modellen tillåter.",
     "info.user_share_percentage": "Det enklaste normala sättet att ändra ägarandel är oftast att en ägare överlåter aktier till den andra genom gåva eller försäljning. Kontrollera bolagsordning och eventuellt aktieägaravtal, skriv en överlåtelsehandling, uppdatera aktieboken direkt och anmäl ändringen via verksamt.se.",
@@ -165,9 +167,9 @@ const TRANSLATIONS = {
     "recommended.subtitle_tax_min": "Optimerad för lägsta total skatt efter att satta mål nås så långt som möjligt.",
     "recommended.empty": "Skicka formuläret för att få en rekommendation.",
     "recommended.final_title": "Slutligt förslag",
-    "recommended.final_summary_pending": "Ta ut {salary} i lön och {dividend} i total utdelning. Aktiefördelningen visas tills vidare som {userName} {userShare} % / {spouseName} {spouseShare} % medan bakgrundsanalysen räknar klart.",
-    "recommended.final_summary_current": "Ta ut {salary} i lön, {dividend} i total utdelning och behåll aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
-    "recommended.final_summary_suggested": "Ta ut {salary} i lön, {dividend} i total utdelning och överväg aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
+    "recommended.final_summary_pending": "Ta ut {salary} i kontant bruttolön före skatt och {dividend} i total bruttoutdelning före utdelningsskatt. Aktiefördelningen visas tills vidare som {userName} {userShare} % / {spouseName} {spouseShare} % medan bakgrundsanalysen räknar klart.",
+    "recommended.final_summary_current": "Ta ut {salary} i kontant bruttolön före skatt, {dividend} i total bruttoutdelning före utdelningsskatt och behåll aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
+    "recommended.final_summary_suggested": "Ta ut {salary} i kontant bruttolön före skatt, {dividend} i total bruttoutdelning före utdelningsskatt och överväg aktiefördelningen {userName} {userShare} % / {spouseName} {spouseShare} %.",
     "recommended.final_status_pending": "Slutligt förslag är fortfarande preliminärt. Lön och utdelning visas redan, men aktiefördelningen kan ändras när ägaranalysen är färdig.",
     "recommended.final_status_same": "Det här är modellens bästa helhetsförslag givet nuvarande indata.",
     "recommended.final_status_better": "Modellen hittar ett bättre hushållsutfall med den föreslagna aktiefördelningen än med nuvarande fördelning.",
@@ -192,9 +194,9 @@ const TRANSLATIONS = {
     "assumptions.title": "Så togs resultatet fram",
     "assumptions.subtitle": "Årskoppling, antaganden och regelnoter.",
     "metric.recommended_salary": "Rekommenderad lön",
-    "metric.recommended_salary_sub": "Kontant bruttoårslön från bolaget",
+    "metric.recommended_salary_sub": "Kontant bruttoårslön före skatt från bolaget",
     "metric.recommended_dividend": "Rekommenderad total utdelning",
-    "metric.recommended_dividend_sub": "Fördelas enligt nuvarande aktieägande",
+    "metric.recommended_dividend_sub": "Bruttoutdelning före utdelningsskatt, fördelad enligt nuvarande aktieägande",
     "metric.user_net": "Användarens netto från bolaget",
     "metric.user_net_sub": "Närmaste modellerade nivå mot önskat mål",
     "metric.household_net": "Hushållets netto från bolaget",
@@ -214,8 +216,8 @@ const TRANSLATIONS = {
     "label.corporate_tax": "Bolagsskatt",
     "label.available_dividend_cash": "Tillgänglig utdelningslikvid",
     "label.gross_salary": "Bruttolön",
-    "label.cash_salary": "Kontant lön",
-    "label.user_other_salary_income": "Annan lön utanför bolaget",
+    "label.cash_salary": "Kontant bruttolön",
+    "label.user_other_salary_income": "Annan bruttolön utanför bolaget",
     "label.car_benefit": "Bilförmån",
     "label.car_benefit_non_cash": "Bilförmån (ej kontant utbetalning)",
     "label.taxable_company_income": "Skattepliktig ersättning från bolaget",
@@ -408,7 +410,7 @@ const TRANSLATIONS = {
     "field.household_min_net_income": "Minimum household net from the company",
     "field.household_min_net_income_hint": "Use 0 if you do not want the recommendation to respect a household floor.",
     "field.optimization_profile": "How the main recommendation should be optimized",
-    "field.spouse_external_salary": "Spouse salary from other employer",
+    "field.spouse_external_salary": "Spouse gross salary from other employer",
     "field.company_result_before_corporate_tax": "Company result before corporate tax",
     "field.opening_retained_earnings": "Opening retained earnings available for dividends",
     "field.tax_municipality": "Municipality for tax auto-fill",
@@ -423,8 +425,8 @@ const TRANSLATIONS = {
     "field.parish_option_placeholder": "Select parish",
     "salary_basis.title": "Salary-base year for dividend room",
     "salary_basis.text": "For planning year {planningYear}, the dividend room looks back to salary year {salaryBasisYear}.",
-    "field.prior_year_company_cash_salaries": "Company cash salaries in {salaryBasisYear}",
-    "field.prior_year_user_company_salary": "User salary from the company in {salaryBasisYear}",
+    "field.prior_year_company_cash_salaries": "Company cash gross salaries in {salaryBasisYear}",
+    "field.prior_year_user_company_salary": "User cash gross salary from the company in {salaryBasisYear}",
     "shareholder.title": "Shareholder values",
     "shareholder.subtitle": "Saved dividend room and cost basis are entered separately for each owner.",
     "field.saved_dividend_space_user": "User saved dividend space",
@@ -437,7 +439,7 @@ const TRANSLATIONS = {
     "field.spouse_birth_year": "Spouse birth year",
     "field.user_share_percentage": "User ownership share",
     "field.spouse_share_percentage": "Spouse ownership share",
-    "field.user_other_salary_income": "User other salary income outside the company",
+    "field.user_other_salary_income": "User other gross salary outside the company",
     "field.user_car_benefit": "Annual car benefit value for the user",
     "field.planned_user_pension": "Planned occupational pension for the user",
     "field.car_benefit_is_pensionable": "Car benefit counts toward pension base",
@@ -449,8 +451,10 @@ const TRANSLATIONS = {
     "info.company_result_before_corporate_tax": "This is the year's profit before corporate tax and before any new periodization-fund allocation inside the app. If the annual accounts include appropriations, you should usually start from profit after financial items. Profit before tax can otherwise be too low here if a periodization-fund allocation has already been deducted there. A current profit report is often an even better source.",
     "info.opening_retained_earnings": "This is distributable retained profit from earlier years according to the latest adopted annual accounts. In annual accounts you usually find it in the balance sheet or in the change in equity, often labelled retained earnings or other unrestricted equity. Do not leave this at zero if the company already has distributable retained earnings from earlier years.",
     "info.periodization_fund_change": "Use a positive amount if you want to make a new allocation this year and move part of the year's profit forward. Use a negative amount if you want to bring an earlier periodization fund back into taxation this year. A new allocation can normally be no more than 25% of the year's taxable profit before the allocation itself. In the app that cap is calculated after the selected salary, employer contributions, car benefit, occupational pension, and special payroll tax on pension. Do not enter last year's already booked allocation here again; if it still exists, it belongs in the opening balance instead.",
-    "info.prior_year_company_cash_salaries": "This is the company's total cash salary paid in the salary-base year. It usually comes from payroll reports, employer declarations, or salary accounts in the bookkeeping rather than directly from the annual report.",
-    "info.prior_year_user_company_salary": "This is your own cash salary from the company in the salary-base year. You usually find it in payroll statements, employer declarations, or a yearly salary summary rather than directly in the annual report.",
+    "info.user_other_salary_income": "Enter annual salary before tax, meaning the gross salary normally shown on the payslip before withholding tax. Do not enter net salary here.",
+    "info.spouse_external_salary": "Enter annual salary before tax, meaning the spouse's gross salary from another employer. This is normally the salary shown before withholding tax on the payslip.",
+    "info.prior_year_company_cash_salaries": "This is the company's total cash gross salary in the salary-base year, before employee tax. It usually comes from payroll reports, employer declarations, or salary accounts in the bookkeeping rather than directly from the annual report.",
+    "info.prior_year_user_company_salary": "This is your own cash gross salary from the company in the salary-base year, before tax. You usually find it in payroll statements, employer declarations, or a yearly salary summary rather than directly in the annual report.",
     "info.municipal_tax_rate": "The field auto-fills municipal and regional income tax from the selected municipality. Burial fee and any church fee are handled separately in the calculation. You can still edit the visible rate manually.",
     "info.car_benefit_is_pensionable": "Tick this only if your pension setup actually treats the car benefit as pensionable salary. If you are unsure, it is usually safer to leave it unticked. It only changes how much occupational pension the model allows.",
     "info.user_share_percentage": "The simplest normal route is usually that one owner transfers shares to the other through a gift or sale. Check the articles of association and any shareholders' agreement first, write a transfer agreement, update the share register immediately, and report the change through verksamt.se.",
@@ -481,9 +485,9 @@ const TRANSLATIONS = {
     "recommended.subtitle_tax_min": "Optimized for the lowest total tax after the entered goals are met as far as possible.",
     "recommended.empty": "Submit the form to generate a recommendation.",
     "recommended.final_title": "Final recommendation",
-    "recommended.final_summary_pending": "Take {salary} as salary and {dividend} as total dividend. The ownership split is shown for now as {userName} {userShare}% / {spouseName} {spouseShare}% while the background ownership analysis finishes.",
-    "recommended.final_summary_current": "Take {salary} as salary, {dividend} as total dividend, and keep the ownership split at {userName} {userShare}% / {spouseName} {spouseShare}%.",
-    "recommended.final_summary_suggested": "Take {salary} as salary, {dividend} as total dividend, and consider the ownership split {userName} {userShare}% / {spouseName} {spouseShare}%.",
+    "recommended.final_summary_pending": "Take {salary} as cash gross salary before tax and {dividend} as total gross dividend before dividend tax. The ownership split is shown for now as {userName} {userShare}% / {spouseName} {spouseShare}% while the background ownership analysis finishes.",
+    "recommended.final_summary_current": "Take {salary} as cash gross salary before tax, {dividend} as total gross dividend before dividend tax, and keep the ownership split at {userName} {userShare}% / {spouseName} {spouseShare}%.",
+    "recommended.final_summary_suggested": "Take {salary} as cash gross salary before tax, {dividend} as total gross dividend before dividend tax, and consider the ownership split {userName} {userShare}% / {spouseName} {spouseShare}%.",
     "recommended.final_status_pending": "The final recommendation is still preliminary. Salary and dividend are already shown, but the ownership split may still change when the ownership analysis finishes.",
     "recommended.final_status_same": "This is the model's best overall proposal based on the current inputs.",
     "recommended.final_status_better": "The model finds a better household outcome with the suggested ownership split than with the current split.",
@@ -508,9 +512,9 @@ const TRANSLATIONS = {
     "assumptions.title": "How the result was derived",
     "assumptions.subtitle": "Year linkage, assumptions, and rule notes.",
     "metric.recommended_salary": "Recommended salary",
-    "metric.recommended_salary_sub": "Gross annual cash salary from the company",
+    "metric.recommended_salary_sub": "Gross annual cash salary before tax from the company",
     "metric.recommended_dividend": "Recommended total dividend",
-    "metric.recommended_dividend_sub": "Allocated according to the current ownership split",
+    "metric.recommended_dividend_sub": "Gross dividend before dividend tax, allocated according to the current ownership split",
     "metric.user_net": "User net income",
     "metric.user_net_sub": "Closest modelled value to the requested target",
     "metric.household_net": "Household net from company",
@@ -530,8 +534,8 @@ const TRANSLATIONS = {
     "label.corporate_tax": "Corporate tax",
     "label.available_dividend_cash": "Available dividend cash",
     "label.gross_salary": "Gross salary",
-    "label.cash_salary": "Cash salary",
-    "label.user_other_salary_income": "Other salary outside the company",
+    "label.cash_salary": "Cash gross salary",
+    "label.user_other_salary_income": "Other gross salary outside the company",
     "label.car_benefit": "Car benefit",
     "label.car_benefit_non_cash": "Car benefit (non-cash benefit)",
     "label.taxable_company_income": "Taxable company compensation",
@@ -568,8 +572,8 @@ const TRANSLATIONS = {
     "alternative.highest_household_net_desc": "The scenario that gives the highest combined net income from the company for the household.",
     "alternative.within_lower_tax_guardrails": "Below state tax and inside 20%",
     "alternative.within_lower_tax_guardrails_desc": "Tries to keep salary below state income tax and dividends inside qualified dividend room before moving into higher-tax layers.",
-    "scenario.salary": "Salary",
-    "scenario.total_dividend": "Total dividend",
+    "scenario.salary": "Gross salary",
+    "scenario.total_dividend": "Gross dividend",
     "scenario.user_net": "User net",
     "scenario.total_tax_burden": "Total tax burden",
     "owner.user_default": "User",
@@ -1096,9 +1100,9 @@ function ownerSpecificText(kind, ownerType, params = {}) {
   if (currentLanguage === "sv") {
     if (kind === "birth_year") return `Födelseår för ${owner}`;
     if (kind === "target_net_income") return `Önskad nettoinkomst efter skatt för ${owner}`;
-    if (kind === "other_salary_income") return `Annan lön utanför bolaget för ${owner}`;
-    if (kind === "external_salary") return `Lön från annan arbetsgivare för ${owner}`;
-    if (kind === "salary_from_company") return `Lön från bolaget under ${params.salaryBasisYear} för ${owner}`;
+    if (kind === "other_salary_income") return `Annan bruttolön utanför bolaget för ${owner}`;
+    if (kind === "external_salary") return `Bruttolön från annan arbetsgivare för ${owner}`;
+    if (kind === "salary_from_company") return `Kontant bruttolön från bolaget under ${params.salaryBasisYear} för ${owner}`;
     if (kind === "saved_dividend_space") return `Sparat utdelningsutrymme för ${owner}`;
     if (kind === "share_cost_basis") return `Omkostnadsbelopp för ${owner}`;
     if (kind === "car_benefit") return `Bilförmån för ${owner}`;
@@ -1111,9 +1115,9 @@ function ownerSpecificText(kind, ownerType, params = {}) {
 
   if (kind === "birth_year") return `Birth year for ${owner}`;
   if (kind === "target_net_income") return `Desired net income after tax for ${owner}`;
-  if (kind === "other_salary_income") return `Other salary outside the company for ${owner}`;
-  if (kind === "external_salary") return `Salary from another employer for ${owner}`;
-  if (kind === "salary_from_company") return `Salary from the company in ${params.salaryBasisYear} for ${owner}`;
+  if (kind === "other_salary_income") return `Other gross salary outside the company for ${owner}`;
+  if (kind === "external_salary") return `Gross salary from another employer for ${owner}`;
+  if (kind === "salary_from_company") return `Cash gross salary from the company in ${params.salaryBasisYear} for ${owner}`;
   if (kind === "saved_dividend_space") return `Saved dividend space for ${owner}`;
   if (kind === "share_cost_basis") return `Share cost basis for ${owner}`;
   if (kind === "car_benefit") return `Car benefit for ${owner}`;

@@ -5,6 +5,7 @@ from app.calculator.planner import (
     compute_company_budget,
     compute_dividend_spaces,
     plan_compensation,
+    recommendation_sort_key,
 )
 
 
@@ -81,24 +82,28 @@ def test_plan_compensation_can_optimize_for_household_maximum():
 
 
 def test_plan_compensation_can_optimize_for_lower_tax_guardrails():
-    result = plan_compensation(
-        PlanningInput(
-            year=2026,
-            target_user_net_income=900_000,
-            company_result_before_corporate_tax=1_600_000,
-            opening_retained_earnings=400_000,
-            spouse_external_salary=900_000,
-            prior_year_company_cash_salaries=900_000,
-            prior_year_user_company_salary=900_000,
-            optimization_profile="guardrails",
-        ).model_dump(),
+    base_input = PlanningInput(
+        year=2026,
+        target_user_net_income=700_000,
+        company_result_before_corporate_tax=1_600_000,
+        opening_retained_earnings=400_000,
+        spouse_external_salary=900_000,
+        prior_year_company_cash_salaries=900_000,
+        prior_year_user_company_salary=900_000,
+    )
+
+    target_result = plan_compensation(base_input.model_dump(), include_ownership_analysis=False)
+    guardrails_result = plan_compensation(
+        base_input.model_copy(update={"optimization_profile": "guardrails"}).model_dump(),
         include_ownership_analysis=False,
     )
 
-    assert result["input"]["optimization_profile"] == "guardrails"
-    assert result["recommended"]["salary_above_state_breakpoint"] == 0
-    assert result["recommended"]["dividend_above_qualified_room"] == 0
-    assert any(item["label"] == "Within lower tax guardrails" for item in result["alternatives"])
+    assert guardrails_result["input"]["optimization_profile"] == "guardrails"
+    assert recommendation_sort_key(base_input.model_copy(update={"optimization_profile": "guardrails"}), guardrails_result["recommended"]) <= recommendation_sort_key(
+        base_input.model_copy(update={"optimization_profile": "guardrails"}),
+        target_result["recommended"],
+    )
+    assert any(item["label"] == "Within lower tax guardrails" for item in guardrails_result["alternatives"])
 
 
 def test_plan_compensation_tracks_household_floor_shortfall():

@@ -187,12 +187,24 @@
             </div>
             <div class="field-grid base-grid">
               <label class="field">
-                <span id="user-other-salary-income-label" data-i18n="field.user_other_salary_income">User other salary income outside the company</span>
+                <div class="label-row">
+                  <span id="user-other-salary-income-label" class="label-text" data-i18n="field.user_other_salary_income">User other salary income outside the company</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.user_other_salary_income">Ange årslön före skatt, alltså bruttolönen som normalt står på lönespecen före preliminär skatt. Fyll inte i nettolön här.</div>
+                  </details>
+                </div>
                 <input name="user_other_salary_income" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.user_other_salary_income if defaults.user_other_salary_income is defined else 0 }}">
               </label>
 
               <label class="field">
-                <span id="spouse-external-salary-label" data-i18n="field.spouse_external_salary">Spouse salary from other employer</span>
+                <div class="label-row">
+                  <span id="spouse-external-salary-label" class="label-text" data-i18n="field.spouse_external_salary">Spouse salary from other employer</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.spouse_external_salary">Ange årslön före skatt, alltså bruttolönen från annan arbetsgivare. Det är normalt lönen före preliminär skatt på lönespecen.</div>
+                  </details>
+                </div>
                 <input name="spouse_external_salary" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.spouse_external_salary }}">
               </label>
 
