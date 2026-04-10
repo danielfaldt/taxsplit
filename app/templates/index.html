@@ -37,8 +37,9 @@
           <label class="language-switch pill">
             <span data-i18n="language.label">Language</span>
             <select id="language-switch" aria-label="Language">
-              <option value="sv">Svenska</option>
-              <option value="en">English</option>
+              {% for language in available_languages %}
+                <option value="{{ language.code }}">{{ language.label }}</option>
+              {% endfor %}
             </select>
           </label>
         </div>
@@ -316,10 +317,43 @@
                 <small data-i18n="field.periodization_fund_change_hint">Positive amounts reduce the current taxable profit. Negative amounts mean reversal from an existing periodization fund balance.</small>
               </label>
 
-              <label class="field">
-                <span data-i18n="field.opening_periodization_fund_balance">Opening periodization fund balance</span>
-                <input name="opening_periodization_fund_balance" type="text" inputmode="numeric" class="js-number" data-number-kind="amount" value="{{ defaults.opening_periodization_fund_balance if defaults.opening_periodization_fund_balance is defined else 0 }}">
-              </label>
+              <div class="field field-span-2">
+                <div class="label-row">
+                  <span class="label-text" data-i18n="field.opening_periodization_layers">Opening periodization funds by year</span>
+                  <details class="info-popover">
+                    <summary aria-label="More info"><span aria-hidden="true">i</span></summary>
+                    <div class="info-panel" data-i18n="info.opening_periodization_layers">Enter each open periodization fund separately at the start of the planning year. The oldest fund must always be reversed first, and each year's fund must be reversed no later than the sixth year after it was set aside.</div>
+                  </details>
+                </div>
+                <div class="field-grid periodization-layer-grid">
+                  <label class="field">
+                    <span id="periodization-layer-label-6">Fond avsatt {{ defaults.year - 6 }}</span>
+                    <input name="opening_periodization_fund_year_minus_6" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="6" value="{{ defaults.opening_periodization_fund_year_minus_6 if defaults.opening_periodization_fund_year_minus_6 is defined else 0 }}">
+                  </label>
+                  <label class="field">
+                    <span id="periodization-layer-label-5">Fond avsatt {{ defaults.year - 5 }}</span>
+                    <input name="opening_periodization_fund_year_minus_5" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="5" value="{{ defaults.opening_periodization_fund_year_minus_5 if defaults.opening_periodization_fund_year_minus_5 is defined else 0 }}">
+                  </label>
+                  <label class="field">
+                    <span id="periodization-layer-label-4">Fond avsatt {{ defaults.year - 4 }}</span>
+                    <input name="opening_periodization_fund_year_minus_4" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="4" value="{{ defaults.opening_periodization_fund_year_minus_4 if defaults.opening_periodization_fund_year_minus_4 is defined else 0 }}">
+                  </label>
+                  <label class="field">
+                    <span id="periodization-layer-label-3">Fond avsatt {{ defaults.year - 3 }}</span>
+                    <input name="opening_periodization_fund_year_minus_3" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="3" value="{{ defaults.opening_periodization_fund_year_minus_3 if defaults.opening_periodization_fund_year_minus_3 is defined else 0 }}">
+                  </label>
+                  <label class="field">
+                    <span id="periodization-layer-label-2">Fond avsatt {{ defaults.year - 2 }}</span>
+                    <input name="opening_periodization_fund_year_minus_2" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="2" value="{{ defaults.opening_periodization_fund_year_minus_2 if defaults.opening_periodization_fund_year_minus_2 is defined else 0 }}">
+                  </label>
+                  <label class="field">
+                    <span id="periodization-layer-label-1">Fond avsatt {{ defaults.year - 1 }}</span>
+                    <input name="opening_periodization_fund_year_minus_1" type="text" inputmode="numeric" class="js-number js-periodization-layer" data-number-kind="amount" data-periodization-offset="1" value="{{ defaults.opening_periodization_fund_year_minus_1 if defaults.opening_periodization_fund_year_minus_1 is defined else 0 }}">
+                  </label>
+                </div>
+                <div id="opening-periodization-summary" class="tax-summary" aria-live="polite"></div>
+                <input name="opening_periodization_fund_balance" id="opening-periodization-fund-balance-hidden" type="hidden" class="js-number" data-number-kind="amount" value="{{ defaults.opening_periodization_fund_balance if defaults.opening_periodization_fund_balance is defined else 0 }}">
+              </div>
             </div>
           </div>
 
@@ -441,6 +475,7 @@
             <div id="problem-signals" class="note-list"></div>
             <div id="final-plan-summary" class="note-list"></div>
             <div id="compensation-mix-analysis" class="note-list"></div>
+            <div id="periodization-strategy" class="note-list"></div>
             <div id="ownership-suggestion" class="note-list"></div>
           </div>
 
@@ -474,6 +509,7 @@
     <script>
       window.APP_DEFAULTS = {{ defaults | tojson }};
       window.APP_BASE_URL = {{ app_base_url | tojson }};
+      window.APP_ASSET_VERSION = {{ asset_version | tojson }};
       window.APP_NAMES = { sv: "Skatteuttag", en: "TaxSplit" };
     </script>
     <script src="/static/app.js?v={{ asset_version }}" defer></script>

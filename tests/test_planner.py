@@ -204,6 +204,46 @@ def test_company_budget_rejects_reversal_above_opening_periodization_balance():
     assert budget["opening_periodization_fund_balance"] == 50_000
 
 
+def test_company_budget_tracks_periodization_layers_mandatory_reversal_and_schablon_income():
+    budget = compute_company_budget(
+        PlanningInput(
+            year=2025,
+            company_result_before_corporate_tax=0,
+            periodization_fund_change=-90_000,
+            opening_periodization_fund_year_minus_6=10_000,
+            opening_periodization_fund_year_minus_5=50_000,
+            opening_periodization_fund_year_minus_4=90_000,
+            opening_periodization_fund_year_minus_3=200_000,
+            opening_periodization_fund_year_minus_2=50_000,
+        ),
+        planned_salary=0,
+    )
+
+    assert budget["valid"] is True
+    assert budget["opening_periodization_fund_balance"] == 400_000
+    assert budget["schablon_income"] == 7_840
+    assert budget["mandatory_reversal_original"] == 10_000
+    assert budget["total_reversal_original"] == 100_000
+    assert budget["total_reversal_taxable"] == 102_400
+    assert budget["taxable_profit"] == 110_240
+    assert budget["max_periodization_allocation"] == 27_560
+
+
+def test_company_budget_supports_legacy_opening_periodization_balance_without_year_split():
+    budget = compute_company_budget(
+        PlanningInput(
+            year=2026,
+            opening_periodization_fund_balance=650_000,
+        ),
+        planned_salary=0,
+    )
+
+    assert budget["valid"] is True
+    assert budget["opening_periodization_fund_balance"] == 650_000
+    assert budget["legacy_periodization_balance_used"] is True
+    assert budget["opening_periodization_layers"][0]["tax_year"] == 2025
+
+
 def test_plan_compensation_uses_other_salary_income_and_car_benefit_without_counting_benefit_as_cash():
     result = plan_compensation(
         PlanningInput(
@@ -221,6 +261,25 @@ def test_plan_compensation_uses_other_salary_income_and_car_benefit_without_coun
     assert result["recommended"]["incremental_user_salary_tax"] > 0
 
 
+def test_plan_compensation_includes_periodization_strategy_analysis():
+    result = plan_compensation(
+        PlanningInput(
+            year=2026,
+            company_result_before_corporate_tax=1_400_000,
+            opening_retained_earnings=300_000,
+            target_user_net_income=550_000,
+            opening_periodization_fund_year_minus_2=200_000,
+            opening_periodization_fund_year_minus_1=150_000,
+        ).model_dump(),
+        include_ownership_analysis=False,
+    )
+
+    strategy = result["periodization_strategy"]
+    assert strategy["summary"]["key"].startswith("periodization.summary_")
+    assert strategy["opening_layers"]
+    assert strategy["retained_after_recommendation"] >= 0
+
+
 def test_plan_compensation_rejects_periodization_fund_above_allowed_maximum():
     try:
         plan_compensation(
@@ -234,13 +293,13 @@ def test_plan_compensation_rejects_periodization_fund_above_allowed_maximum():
                 opening_periodization_fund_balance=650_000,
                 prior_year_company_cash_salaries=650_599,
                 prior_year_user_company_salary=650_599,
-                periodization_fund_change=150_000,
+                periodization_fund_change=160_000,
             ).model_dump(),
             include_ownership_analysis=False,
         )
     except CalculationInputError as exc:
         assert exc.key == "error.periodization_allocation_too_high"
-        assert exc.params["maxAmount"] == 149_794.26
-        assert exc.params["requestedAmount"] == 150_000
+        assert exc.params["maxAmount"] == 153_938.01
+        assert exc.params["requestedAmount"] == 160_000
     else:
         raise AssertionError("Expected CalculationInputError for excessive periodization allocation")

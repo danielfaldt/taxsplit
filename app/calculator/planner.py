@@ -9,6 +9,7 @@ from .rules import (
     CAPITAL_TAX_RATE,
     CORPORATE_TAX_RATE,
     DIVIDEND_RULES,
+    PERIODIZATION_RULES,
     PENSION_DEDUCTION_PBB_CAP,
     PENSION_DEDUCTION_RATE,
     QUALIFIED_DIVIDEND_TAX_RATE,
@@ -16,6 +17,7 @@ from .rules import (
     SPECIAL_PAYROLL_TAX_RATE,
     SUPPORTED_YEARS,
     employer_contribution_rate,
+    periodization_reversal_factor,
 )
 from .tax import compute_personal_tax
 
@@ -48,6 +50,12 @@ class PlanningInput(BaseModel):
     car_benefit_is_pensionable: bool = Field(default=False)
     periodization_fund_change: float = Field(default=0)
     opening_periodization_fund_balance: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_6: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_5: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_4: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_3: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_2: float = Field(default=0, ge=0)
+    opening_periodization_fund_year_minus_1: float = Field(default=0, ge=0)
     user_car_benefit: float = Field(default=0, ge=0)
     prior_year_company_cash_salaries: float = Field(default=520_000, ge=0)
     prior_year_user_company_salary: float = Field(default=520_000, ge=0)
@@ -96,6 +104,17 @@ class PlanningInput(BaseModel):
     def spouse_share_fraction(self) -> float:
         return self.spouse_share_percentage / 100.0
 
+    @property
+    def periodization_layer_inputs(self) -> list[tuple[int, float]]:
+        return [
+            (self.year - 6, self.opening_periodization_fund_year_minus_6),
+            (self.year - 5, self.opening_periodization_fund_year_minus_5),
+            (self.year - 4, self.opening_periodization_fund_year_minus_4),
+            (self.year - 3, self.opening_periodization_fund_year_minus_3),
+            (self.year - 2, self.opening_periodization_fund_year_minus_2),
+            (self.year - 1, self.opening_periodization_fund_year_minus_1),
+        ]
+
 
 class CalculationInputError(ValueError):
     def __init__(self, key: str, params: dict[str, Any] | None = None) -> None:
@@ -117,6 +136,130 @@ class DividendSpaceResult:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class PeriodizationLayer:
+    tax_year: int
+    amount: float
+    source: str
+
+    @property
+    def latest_reversal_year(self) -> int:
+        return self.tax_year + 6
+
+    @property
+    def reversal_factor(self) -> float:
+        return periodization_reversal_factor(self.tax_year)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "tax_year": self.tax_year,
+            "amount": round(self.amount, 2),
+            "source": self.source,
+            "latest_reversal_year": self.latest_reversal_year,
+            "reversal_factor": round(self.reversal_factor, 4),
+        }
+
+
+def opening_periodization_layers(data: PlanningInput) -> list[PeriodizationLayer]:
+    explicit_layers = [
+        PeriodizationLayer(tax_year=tax_year, amount=amount, source="explicit")
+        for tax_year, amount in data.periodization_layer_inputs
+        if amount > 0
+    ]
+    if explicit_layers:
+        return explicit_layers
+    if data.opening_periodization_fund_balance > 0:
+        return [
+            PeriodizationLayer(
+                tax_year=data.year - 1,
+                amount=data.opening_periodization_fund_balance,
+                source="legacy_balance",
+            )
+        ]
+    return []
+
+
+def apply_periodization_reversal(
+    layers: list[PeriodizationLayer],
+    requested_original_reversal: float,
+) -> tuple[list[dict[str, float]], list[PeriodizationLayer]]:
+    remaining = requested_original_reversal
+    reversed_layers: list[dict[str, float]] = []
+    closing_layers: list[PeriodizationLayer] = []
+
+    for layer in sorted(layers, key=lambda item: item.tax_year):
+        if remaining <= 0:
+            closing_layers.append(layer)
+            continue
+
+        reversed_amount = min(layer.amount, remaining)
+        remaining -= reversed_amount
+        kept_amount = layer.amount - reversed_amount
+        if reversed_amount > 0:
+            reversed_layers.append(
+                {
+                    "tax_year": layer.tax_year,
+                    "original_amount": round(reversed_amount, 2),
+                    "taxable_amount": round(reversed_amount * layer.reversal_factor, 2),
+                    "reversal_factor": round(layer.reversal_factor, 4),
+                    "latest_reversal_year": layer.latest_reversal_year,
+                }
+            )
+        if kept_amount > 0:
+            closing_layers.append(
+                PeriodizationLayer(
+                    tax_year=layer.tax_year,
+                    amount=kept_amount,
+                    source=layer.source,
+                )
+            )
+
+    if remaining > 1:
+        raise CalculationInputError(
+            "error.periodization_reversal_too_high",
+            {
+                "requestedAmount": round(requested_original_reversal, 2),
+                "openingBalance": round(sum(layer.amount for layer in layers), 2),
+            },
+        )
+
+    return reversed_layers, closing_layers
+
+
+def periodization_analysis(data: PlanningInput) -> dict[str, Any]:
+    layers = opening_periodization_layers(data)
+    opening_balance = round(sum(layer.amount for layer in layers), 2)
+    mandatory_layers = [layer for layer in layers if layer.latest_reversal_year <= data.year]
+    mandatory_reversal_original = round(sum(layer.amount for layer in mandatory_layers), 2)
+    extra_reversal_original = round(max(-data.periodization_fund_change, 0.0), 2)
+    available_extra_reversal = round(max(opening_balance - mandatory_reversal_original, 0.0), 2)
+    if extra_reversal_original > available_extra_reversal + 1:
+        raise CalculationInputError(
+            "error.periodization_reversal_too_high",
+            {
+                "requestedAmount": round(extra_reversal_original, 2),
+                "openingBalance": available_extra_reversal,
+            },
+        )
+    total_requested_reversal_original = round(mandatory_reversal_original + extra_reversal_original, 2)
+    reversed_layers, closing_layers = apply_periodization_reversal(layers, total_requested_reversal_original)
+    reversal_taxable_amount = round(sum(item["taxable_amount"] for item in reversed_layers), 2)
+    schablon_income = round(opening_balance * PERIODIZATION_RULES[data.year].schablon_interest_rate, 2)
+
+    return {
+        "opening_layers": [layer.to_dict() for layer in sorted(layers, key=lambda item: item.tax_year)],
+        "opening_balance": opening_balance,
+        "legacy_balance_used": bool(layers and all(layer.source == "legacy_balance" for layer in layers)),
+        "schablon_income": schablon_income,
+        "mandatory_reversal_original": mandatory_reversal_original,
+        "extra_reversal_original": extra_reversal_original,
+        "total_reversal_original": total_requested_reversal_original,
+        "total_reversal_taxable": reversal_taxable_amount,
+        "reversed_layers": reversed_layers,
+        "closing_layers_before_new_allocation": [layer.to_dict() for layer in closing_layers],
+    }
 
 
 def compute_dividend_spaces(data: PlanningInput) -> DividendSpaceResult:
@@ -252,7 +395,7 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
             "valid": False,
             "pension_deduction_limit": round(pension_limit, 2),
             "max_periodization_allocation": 0.0,
-            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
+            "opening_periodization_fund_balance": round(sum(layer.amount for layer in opening_periodization_layers(data)), 2),
         }
 
     profit_before_periodization = (
@@ -262,26 +405,55 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
         - data.planned_user_pension
         - pension_special_payroll_tax
     )
-    max_periodization_allocation = max(profit_before_periodization, 0.0) * 0.25
+    try:
+        periodization = periodization_analysis(data)
+    except CalculationInputError:
+        return {
+            "valid": False,
+            "pension_deduction_limit": round(pension_limit, 2),
+            "max_periodization_allocation": 0.0,
+            "opening_periodization_fund_balance": round(sum(layer.amount for layer in opening_periodization_layers(data)), 2),
+        }
+    preliminary_taxable_profit_before_allocation = (
+        profit_before_periodization
+        + periodization["schablon_income"]
+        + periodization["total_reversal_taxable"]
+    )
+    max_periodization_allocation = max(preliminary_taxable_profit_before_allocation, 0.0) * PERIODIZATION_RULES[data.year].allocation_rate
     if data.periodization_fund_change > max_periodization_allocation + 1:
         return {
             "valid": False,
             "pension_deduction_limit": round(pension_limit, 2),
             "max_periodization_allocation": round(max_periodization_allocation, 2),
-            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
+            "opening_periodization_fund_balance": periodization["opening_balance"],
         }
-    if abs(min(data.periodization_fund_change, 0.0)) > data.opening_periodization_fund_balance + 1:
-        return {
-            "valid": False,
-            "pension_deduction_limit": round(pension_limit, 2),
-            "max_periodization_allocation": round(max_periodization_allocation, 2),
-            "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
-        }
-
-    taxable_profit = max(profit_before_periodization - data.periodization_fund_change, 0.0)
+    book_profit_after_periodization = (
+        profit_before_periodization
+        + periodization["total_reversal_original"]
+        - max(data.periodization_fund_change, 0.0)
+    )
+    taxable_profit = max(
+        book_profit_after_periodization
+        + periodization["schablon_income"]
+        + (periodization["total_reversal_taxable"] - periodization["total_reversal_original"]),
+        0.0,
+    )
     corporate_tax = taxable_profit * CORPORATE_TAX_RATE
-    post_tax_profit = taxable_profit - corporate_tax
+    post_tax_profit = book_profit_after_periodization - corporate_tax
     available_dividend_cash = data.opening_retained_earnings + post_tax_profit
+    closing_layers = [
+        *periodization["closing_layers_before_new_allocation"],
+    ]
+    if data.periodization_fund_change > 0:
+        closing_layers.append(
+            {
+                "tax_year": data.year,
+                "amount": round(data.periodization_fund_change, 2),
+                "source": "current_year",
+                "latest_reversal_year": data.year + 6,
+                "reversal_factor": round(periodization_reversal_factor(data.year), 4),
+            }
+        )
 
     return {
         "valid": True,
@@ -296,8 +468,20 @@ def compute_company_budget(data: PlanningInput, planned_salary: float) -> dict[s
         "pension_deduction_limit": round(pension_limit, 2),
         "profit_before_periodization": round(profit_before_periodization, 2),
         "periodization_fund_change": round(data.periodization_fund_change, 2),
-        "opening_periodization_fund_balance": round(data.opening_periodization_fund_balance, 2),
+        "opening_periodization_fund_balance": periodization["opening_balance"],
+        "opening_periodization_layers": periodization["opening_layers"],
+        "legacy_periodization_balance_used": periodization["legacy_balance_used"],
+        "schablon_income": round(periodization["schablon_income"], 2),
+        "mandatory_reversal_original": round(periodization["mandatory_reversal_original"], 2),
+        "extra_reversal_original": round(periodization["extra_reversal_original"], 2),
+        "total_reversal_original": round(periodization["total_reversal_original"], 2),
+        "total_reversal_taxable": round(periodization["total_reversal_taxable"], 2),
+        "reversed_periodization_layers": periodization["reversed_layers"],
+        "closing_periodization_layers": closing_layers,
         "max_periodization_allocation": round(max_periodization_allocation, 2),
+        "unused_periodization_allocation_room": round(max(max_periodization_allocation - max(data.periodization_fund_change, 0.0), 0.0), 2),
+        "preliminary_taxable_profit_before_allocation": round(preliminary_taxable_profit_before_allocation, 2),
+        "book_profit_after_periodization": round(book_profit_after_periodization, 2),
         "taxable_profit": round(taxable_profit, 2),
         "corporate_tax": round(corporate_tax, 2),
         "post_tax_profit": round(post_tax_profit, 2),
@@ -849,6 +1033,113 @@ def build_problem_signals(
     return issues
 
 
+def build_periodization_strategy(
+    data: PlanningInput,
+    recommended: dict[str, Any],
+) -> dict[str, Any]:
+    company = recommended["company"]
+    retained_after_recommendation = round(max(company["available_dividend_cash"] - recommended["total_dividend"], 0.0), 2)
+    unused_allocation_room = round(company["unused_periodization_allocation_room"], 2)
+    immediate_tax_deferral = round(unused_allocation_room * CORPORATE_TAX_RATE, 2)
+    target_reached = recommended["shortfall_to_target"] <= 1
+    household_floor_met = recommended["household_shortfall_to_floor"] <= 1
+    latest_reversal_year = max(
+        (
+            layer["latest_reversal_year"]
+            for layer in company["closing_periodization_layers"]
+            if layer["amount"] > 0
+        ),
+        default=None,
+    )
+
+    if company["mandatory_reversal_original"] > 1:
+        summary = {
+            "key": "periodization.summary_mandatory_reversal",
+            "params": {
+                "mandatoryAmount": round(company["mandatory_reversal_original"], 2),
+            },
+        }
+    elif target_reached and household_floor_met and unused_allocation_room > 1 and retained_after_recommendation > 1:
+        summary = {
+            "key": "periodization.summary_unused_room_after_goal",
+            "params": {
+                "unusedAllocationRoom": unused_allocation_room,
+                "immediateTaxDeferral": immediate_tax_deferral,
+            },
+        }
+    elif retained_after_recommendation > 1:
+        summary = {
+            "key": "periodization.summary_retained_profit",
+            "params": {
+                "retainedAmount": retained_after_recommendation,
+            },
+        }
+    else:
+        summary = {"key": "periodization.summary_no_material_surplus", "params": {}}
+
+    actions: list[dict[str, Any]] = []
+    if company["mandatory_reversal_original"] > 1:
+        actions.append(
+            {
+                "key": "periodization.action_mandatory_reversal",
+                "params": {
+                    "mandatoryAmount": round(company["mandatory_reversal_original"], 2),
+                    "taxableAmount": round(company["total_reversal_taxable"], 2),
+                },
+            }
+        )
+    if unused_allocation_room > 1:
+        actions.append(
+            {
+                "key": "periodization.action_unused_room",
+                "params": {
+                    "unusedAllocationRoom": unused_allocation_room,
+                    "immediateTaxDeferral": immediate_tax_deferral,
+                },
+            }
+        )
+    if retained_after_recommendation > 1:
+        actions.append(
+            {
+                "key": "periodization.action_retained_profit",
+                "params": {
+                    "retainedAmount": retained_after_recommendation,
+                },
+            }
+        )
+    if latest_reversal_year is not None:
+        actions.append(
+            {
+                "key": "periodization.action_latest_reversal_year",
+                "params": {
+                    "latestReversalYear": latest_reversal_year,
+                },
+            }
+        )
+    if company["schablon_income"] > 1:
+        actions.append(
+            {
+                "key": "periodization.action_schablon_income",
+                "params": {
+                    "schablonIncome": round(company["schablon_income"], 2),
+                },
+            }
+        )
+    if company["legacy_periodization_balance_used"]:
+        actions.append({"key": "periodization.action_legacy_balance", "params": {}})
+
+    return {
+        "summary": summary,
+        "actions": actions,
+        "retained_after_recommendation": retained_after_recommendation,
+        "unused_allocation_room": unused_allocation_room,
+        "immediate_tax_deferral": immediate_tax_deferral,
+        "latest_reversal_year": latest_reversal_year,
+        "opening_layers": company["opening_periodization_layers"],
+        "closing_layers": company["closing_periodization_layers"],
+    }
+
+
 def build_split_variant(data: PlanningInput, user_share_percentage: float) -> PlanningInput:
     user_fraction = user_share_percentage / 100.0
     spouse_fraction = 1.0 - user_fraction
@@ -867,6 +1158,7 @@ def build_split_variant(data: PlanningInput, user_share_percentage: float) -> Pl
 
 
 def plan_core(data: PlanningInput) -> dict[str, Any]:
+    periodization = periodization_analysis(data)
     zero_salary_budget = compute_company_budget(data, 0.0)
     if not zero_salary_budget["valid"]:
         if data.planned_user_pension > zero_salary_budget.get("pension_deduction_limit", 0) + 1:
@@ -885,12 +1177,16 @@ def plan_core(data: PlanningInput) -> dict[str, Any]:
                     "maxAmount": round(zero_salary_budget.get("max_periodization_allocation", 0), 2),
                 },
             )
-        if abs(min(data.periodization_fund_change, 0.0)) > data.opening_periodization_fund_balance + 1:
+        available_extra_reversal = round(
+            max(periodization["opening_balance"] - periodization["mandatory_reversal_original"], 0.0),
+            2,
+        )
+        if abs(min(data.periodization_fund_change, 0.0)) > available_extra_reversal + 1:
             raise CalculationInputError(
                 "error.periodization_reversal_too_high",
                 {
                     "requestedAmount": round(abs(min(data.periodization_fund_change, 0.0)), 2),
-                    "openingBalance": round(data.opening_periodization_fund_balance, 2),
+                    "openingBalance": available_extra_reversal,
                 },
             )
 
@@ -1043,6 +1339,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
     alternatives = planned["alternatives"]
     compensation_mix = planned["compensation_mix"]
     search_meta = planned["search_meta"]
+    periodization_strategy = build_periodization_strategy(data, recommended)
     salary_basis_year = DIVIDEND_RULES[data.year].salary_basis_year
     ownership_analysis_pending = not include_ownership_analysis
     ownership_suggestion = suggest_ownership_split(data) if include_ownership_analysis else None
@@ -1065,6 +1362,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
         "recommended": recommended,
         "alternatives": alternatives,
         "compensation_mix": compensation_mix,
+        "periodization_strategy": periodization_strategy,
         "problems": build_problem_signals(data, recommended, search_meta),
         "ownership_analysis_pending": ownership_analysis_pending,
         "ownership_suggestion": ownership_suggestion,
@@ -1086,6 +1384,7 @@ def plan_compensation(payload: dict[str, Any], *, include_ownership_analysis: bo
             {"key": "assumption.car_benefit_cash_vs_tax", "params": {}},
             {"key": "assumption.pension_limit", "params": {}},
             {"key": "assumption.periodization_fund", "params": {}},
+            {"key": "assumption.periodization_layers", "params": {}},
         ],
         "explanations": [
             {"key": "explanation.salary_uses_planning_year", "params": {"planningYear": data.year}},

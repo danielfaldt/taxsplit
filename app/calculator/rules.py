@@ -48,6 +48,13 @@ class DividendRule:
     new_wage_deduction_total: float | None = None
 
 
+@dataclass(frozen=True)
+class PeriodizationRule:
+    year: int
+    allocation_rate: float
+    schablon_interest_rate: float
+
+
 SALARY_RULES: dict[int, SalaryTaxRule] = {
     2025: SalaryTaxRule(
         year=2025,
@@ -104,6 +111,20 @@ DIVIDEND_RULES: dict[int, DividendRule] = {
 }
 
 
+PERIODIZATION_RULES: dict[int, PeriodizationRule] = {
+    2025: PeriodizationRule(
+        year=2025,
+        allocation_rate=0.25,
+        schablon_interest_rate=0.0196,
+    ),
+    2026: PeriodizationRule(
+        year=2026,
+        allocation_rate=0.25,
+        schablon_interest_rate=0.0255,
+    ),
+}
+
+
 SUPPORTED_YEARS = sorted(SALARY_RULES.keys())
 
 
@@ -119,3 +140,11 @@ def employer_contribution_rate(year: int, birth_year: int) -> float:
     if age_at_year_start(year, birth_year) >= SALARY_RULES[year].reduced_employer_contribution_min_age:
         return REDUCED_EMPLOYER_CONTRIBUTION_RATE
     return FULL_EMPLOYER_CONTRIBUTION_RATE
+
+
+def periodization_reversal_factor(tax_year: int) -> float:
+    if tax_year < 2019:
+        return 1.06
+    if tax_year < 2021:
+        return 1.04
+    return 1.0

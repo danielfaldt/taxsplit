@@ -42,7 +42,8 @@ The primary company input is the company result before corporate tax. The app th
 - The recommendation search can now be steered by both an optimization profile and a household net floor.
 - `app/tax_rates.py`: municipality and parish tax-rate catalog parsing from official Skatteverket datasets
 - `app/templates/index.html`: server-rendered shell
-- `app/static/app.js`: form handling, local storage, and result rendering
+- `app/static/app.js`: form handling, local storage, async language loading, and result rendering
+- `app/static/i18n/*.json`: language catalogs loaded by the client; adding a valid catalog file exposes another language in the switcher
 - `app/static/styles.css`: application styling
 - `tests/`: unit and application tests
 

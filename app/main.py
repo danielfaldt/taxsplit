@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
@@ -23,13 +24,28 @@ app = FastAPI(title=settings.app_name)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
+def available_languages() -> list[dict[str, str]]:
+    options: list[dict[str, str]] = []
+    labels = {"sv": "Svenska", "en": "English"}
+    for path in sorted((STATIC_DIR / "i18n").glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        options.append(
+            {
+                "code": path.stem,
+                "label": str(payload.get("language.option") or labels.get(path.stem, path.stem.upper())),
+            }
+        )
+    return options or [{"code": "sv", "label": "Svenska"}, {"code": "en", "label": "English"}]
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
     defaults = PlanningInput().model_dump()
-    asset_version = max(
-        int((STATIC_DIR / "app.js").stat().st_mtime),
-        int((STATIC_DIR / "styles.css").stat().st_mtime),
-    )
+    asset_paths = [(STATIC_DIR / "app.js"), (STATIC_DIR / "styles.css"), *(STATIC_DIR / "i18n").glob("*.json")]
+    asset_version = max(int(path.stat().st_mtime) for path in asset_paths)
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -39,6 +55,7 @@ def index(request: Request) -> HTMLResponse:
             "supported_years": SUPPORTED_YEARS,
             "app_base_url": settings.app_base_url,
             "asset_version": asset_version,
+            "available_languages": available_languages(),
         },
     )
 

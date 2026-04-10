@@ -771,6 +771,10 @@ button[type="submit"] {
   gap: 10px;
 }
 
+.ownership-stat-grid {
+  margin: 12px 0;
+}
+
 .mix-stat,
 .mix-comparison-card {
   padding: 12px 14px;
